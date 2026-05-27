@@ -1,0 +1,25 @@
+# Render Blueprint — read by Render at https://render.com/ when you choose
+# "New + → Blueprint" and connect this repo. Render reads this file from the
+# REPO ROOT, which is why it lives here and not inside backend/HackathonBackend.
+services:
+  - type: web
+    name: bytebrigade-api
+    runtime: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./backend/HackathonBackend/Dockerfile
+    dockerContext: ./backend/HackathonBackend
+    healthCheckPath: /openapi/v1.json
+    autoDeploy: true
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      # Long random string — used to sign JWT tokens.
+      - key: JWT__KEY
+        sync: false
+      # Neon Postgres connection (set in Render dashboard, not in this file).
+      - key: DEFAULT_CONNECTION
+        sync: false
+      # Vercel front-end URL(s), comma-separated, no trailing slash.
+      - key: CORS__ALLOWEDORIGINS
+        sync: false

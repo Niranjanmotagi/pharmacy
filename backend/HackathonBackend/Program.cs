@@ -14,35 +14,38 @@ var builder = WebApplication.CreateBuilder(args);
 // CONFIGURATION (env-driven for deploy)
 // =========================
 
-// JWT secret comes from configuration or env var:
-//   JWT__KEY   (Render / Vercel style)
-//   Jwt:Key    (appsettings)
+// JWT secret priority:
+//   1) JWT__KEY env var (Render / production)
+//   2) Jwt:Key from appsettings.json (local dev)
+//   3) Hardcoded dev fallback (last resort)
 var jwtKey =
-    builder.Configuration["Jwt:Key"]
-    ?? Environment.GetEnvironmentVariable("JWT__KEY")
+    Environment.GetEnvironmentVariable("JWT__KEY")
+    ?? builder.Configuration["Jwt:Key"]
     ?? "THIS_IS_MY_SUPER_SECRET_JWT_KEY_123456789"; // dev fallback only
 
 // Connection string priority:
-//   1) ConnectionStrings:DefaultConnection
-//   2) DEFAULT_CONNECTION env var (Render injects env vars; this is the
-//      simplest way to wire Azure SQL from there)
+//   1) DEFAULT_CONNECTION env var (Render / production)
+//   2) ConnectionStrings:DefaultConnection from appsettings.json (local dev)
+//
+// Env var has to win, otherwise the localhost dev value in appsettings.json
+// would always be used and Render would never connect to Neon.
 var connectionString =
-    builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? Environment.GetEnvironmentVariable("DEFAULT_CONNECTION");
+    Environment.GetEnvironmentVariable("DEFAULT_CONNECTION")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
 if (string.IsNullOrWhiteSpace(connectionString))
 {
     throw new InvalidOperationException(
-        "No SQL Server connection string found. Set ConnectionStrings:DefaultConnection " +
-        "or the DEFAULT_CONNECTION env var.");
+        "No Postgres connection string found. Set the DEFAULT_CONNECTION env var " +
+        "(production) or ConnectionStrings:DefaultConnection in appsettings.json (dev).");
 }
 
-// Comma-separated list of allowed front-end origins:
+// Comma-separated list of allowed front-end origins.
+// Env var wins so Render can override the empty appsettings default.
 //   CORS__ALLOWEDORIGINS = "https://your-app.vercel.app,https://other.example"
-// Falls back to wide-open for local dev.
 var allowedOrigins =
-    (builder.Configuration["Cors:AllowedOrigins"]
-        ?? Environment.GetEnvironmentVariable("CORS__ALLOWEDORIGINS")
+    (Environment.GetEnvironmentVariable("CORS__ALLOWEDORIGINS")
+        ?? builder.Configuration["Cors:AllowedOrigins"]
         ?? "")
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 

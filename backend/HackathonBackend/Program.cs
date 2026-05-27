@@ -192,19 +192,40 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Apply pending EF migrations on startup (Render container starts cold each
-// time; this guarantees the schema is up to date on the cloud SQL host).
+// Ensure schema + seed data exist on every cold start.
+//
+// Strategy:
+//   1. If the project has EF migrations, apply them with Migrate(). This is
+//      the production-grade path.
+//   2. Otherwise (no Migrations/ folder), fall back to EnsureCreated() which
+//      builds the tables directly from the model and applies HasData seeds.
+//      Perfect for hackathon deploys where schema is stable.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
     try
     {
-        db.Database.Migrate();
+        var pending = db.Database.GetPendingMigrations().ToList();
+        var applied = db.Database.GetAppliedMigrations().ToList();
+
+        if (pending.Any() || applied.Any())
+        {
+            db.Database.Migrate();
+            logger.LogInformation("EF migrations applied. Pending count was {Count}.", pending.Count);
+        }
+        else
+        {
+            // No migrations at all — create schema from the model + apply HasData seeds.
+            var created = db.Database.EnsureCreated();
+            logger.LogInformation(
+                "No migrations found. EnsureCreated() returned {Created}.", created);
+        }
     }
     catch (Exception ex)
     {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Database migration failed at startup.");
+        logger.LogError(ex, "Database initialization failed at startup.");
     }
 }
 

@@ -1,0 +1,35 @@
+.register-page {
+  min-height: calc(100vh - 96px);
+  background:
+    linear-gradient(135deg, rgba(232, 247, 239, 0.6), rgba(247, 250, 249, 0.85)),
+    var(--bb-bg);
+}
+
+.brand-panel {
+  background: linear-gradient(160deg,
+    rgba(11, 125, 93, 0.06) 0%,
+    rgba(11, 125, 93, 0.02) 100%);
+  border-radius: var(--bb-radius-xl);
+}
+
+.brand-points li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  color: var(--bb-text-muted);
+  font-size: 0.95rem;
+}
+.brand-points li span {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--bb-primary-50);
+  color: var(--bb-primary-700);
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.bb-page > .container > .row { min-height: 0; }

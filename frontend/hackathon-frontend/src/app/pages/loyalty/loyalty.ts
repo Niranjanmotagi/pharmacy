@@ -18,11 +18,15 @@ export class Loyalty implements OnInit {
 
   constructor(private loyaltyService: LoyaltyService) {}
 
-  ngOnInit() {
-    this.loyaltyService.getPoints().subscribe((r) => (this.points = r.points));
+  ngOnInit(): void {
+    this.loyaltyService.getPoints().subscribe({
+      next: (r: { points: number }) => (this.points = r?.points ?? 0),
+      error: () => (this.points = 0)
+    });
+
     this.loyaltyService.getTransactions().subscribe({
-      next: (t) => {
-        this.transactions = t;
+      next: (t: LoyaltyTransaction[]) => {
+        this.transactions = t ?? [];
         this.loading = false;
       },
       error: () => (this.loading = false)

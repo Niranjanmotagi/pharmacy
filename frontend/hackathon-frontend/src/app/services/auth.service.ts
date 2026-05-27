@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface LoginResponse {
   token: string;
@@ -9,11 +10,26 @@ export interface LoginResponse {
   userId: number;
 }
 
+export interface RegisterResponse {
+  message: string;
+  userId: number;
+}
+
+export interface RegisterPayload {
+  username: string;
+  password: string;
+  role?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  apiUrl = 'http://localhost:5020/api/Auth';
+  apiUrl = `${environment.apiBaseUrl}/api/Auth`;
 
   constructor(private http: HttpClient) {}
 
@@ -21,7 +37,7 @@ export class AuthService {
     return this.http
       .post<LoginResponse>(`${this.apiUrl}/login`, { username, password })
       .pipe(
-        tap((res) => {
+        tap((res: LoginResponse) => {
           if (typeof window !== 'undefined') {
             localStorage.setItem('token', res.token);
             localStorage.setItem('username', res.username);
@@ -32,22 +48,14 @@ export class AuthService {
       );
   }
 
-  register(payload: {
-    username: string;
-    password: string;
-    role?: string;
-    email?: string;
-    firstName?: string;
-    lastName?: string;
-    phoneNumber?: string;
-  }) {
-    return this.http.post(`${this.apiUrl}/register`, {
+  register(payload: RegisterPayload): Observable<RegisterResponse> {
+    return this.http.post<RegisterResponse>(`${this.apiUrl}/register`, {
       role: 'Customer',
       ...payload
     });
   }
 
-  logout() {
+  logout(): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
       localStorage.removeItem('username');

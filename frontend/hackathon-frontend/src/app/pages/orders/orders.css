@@ -1,0 +1,5 @@
+.btn-group .btn.active {
+  background: var(--bb-primary);
+  color: #fff;
+  border-color: var(--bb-primary);
+}

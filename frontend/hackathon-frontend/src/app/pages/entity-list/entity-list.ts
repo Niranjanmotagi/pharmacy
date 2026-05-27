@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { EntityService } from '../../services/entity.service';
+import { Entity, EntityService } from '../../services/entity.service';
 
 @Component({
   selector: 'app-entity-list',
@@ -12,31 +12,22 @@ import { EntityService } from '../../services/entity.service';
 })
 export class EntityList implements OnInit {
 
-  entities: any[] = [];
+  entities: Entity[] = [];
 
   constructor(private entityService: EntityService) {}
 
   ngOnInit(): void {
-
     this.loadEntities();
-
   }
 
-  loadEntities() {
-
+  loadEntities(): void {
     this.entityService.getEntities().subscribe({
-      next: (response: any) => {
-
-        console.log(response);
-
-        this.entities = response.$values;
-
+      next: (response: Entity[]) => {
+        this.entities = response ?? [];
       },
-      error: (error) => {
-        console.log(error);
+      error: (err: unknown) => {
+        console.error('[entity-list] failed to load entities', err);
       }
     });
-
   }
-
 }

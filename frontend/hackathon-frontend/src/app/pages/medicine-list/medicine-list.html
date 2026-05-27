@@ -1,109 +1,140 @@
 <app-navbar></app-navbar>
 
 <!-- Hero -->
-<section class="bg-success bg-gradient text-white py-4 mb-4">
-  <div class="container">
-    <div class="row align-items-center g-3">
-      <div class="col-md-8">
-        <h1 class="fw-bold mb-1">Browse Medicines</h1>
-        <p class="mb-0 opacity-75">
-          Search and filter through our wide range of medicines — tablets,
-          syrups, vitamins and more, delivered to your doorstep.
-        </p>
-      </div>
-      <div class="col-md-4 text-md-end">
-        <span class="badge bg-light text-success fs-6 px-3 py-2">
-          {{ medicines.length }} medicines available
-        </span>
-      </div>
+<section class="container bb-page pt-0">
+  <div class="bb-hero d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+    <div>
+      <span class="bb-chip mb-2" style="background: rgba(255,255,255,0.18); color: #fff;">
+        Browse catalog
+      </span>
+      <h1 class="mb-1">Medicines, delivered with care</h1>
+      <p class="mb-0">
+        Search 50+ medicines across categories. Filter by dosage, packaging,
+        Rx-only or price — and add to your cart in one click.
+      </p>
+    </div>
+    <div class="text-md-end">
+      <div class="bb-hero-stat">{{ filtered().length }}<small> showing</small></div>
+      <div class="bb-hero-stat-sub">of {{ medicines.length }} total</div>
     </div>
   </div>
-</section>
 
-<div class="container pb-5">
   <!-- Filters -->
   <div class="card shadow-sm mb-4">
     <div class="card-body">
-      <div class="row g-2 align-items-end">
+      <div class="row g-3 align-items-end">
         <div class="col-md-4">
           <label class="form-label small text-muted mb-1">Search</label>
           <input
             class="form-control"
-            placeholder="Name, composition, or category"
+            placeholder="Name, composition, manufacturer, category"
             [(ngModel)]="search"
+            (ngModelChange)="onFilterChange()"
           />
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label class="form-label small text-muted mb-1">Category</label>
-          <select class="form-select" [(ngModel)]="selectedCategory">
-            <option value="">All categories</option>
+          <select class="form-select" [(ngModel)]="selectedCategory" (ngModelChange)="onFilterChange()">
+            <option value="">All</option>
             <option *ngFor="let c of categories()" [value]="c">{{ c }}</option>
           </select>
         </div>
         <div class="col-md-2">
           <label class="form-label small text-muted mb-1">Dosage</label>
-          <select class="form-select" [(ngModel)]="selectedDosage">
+          <select class="form-select" [(ngModel)]="selectedDosage" (ngModelChange)="onFilterChange()">
             <option value="">All</option>
             <option *ngFor="let d of dosageForms()" [value]="d">{{ d }}</option>
           </select>
         </div>
         <div class="col-md-2">
           <label class="form-label small text-muted mb-1">Packaging</label>
-          <select class="form-select" [(ngModel)]="selectedPackaging">
+          <select class="form-select" [(ngModel)]="selectedPackaging" (ngModelChange)="onFilterChange()">
             <option value="">All</option>
-            <option *ngFor="let p of packagingTypes()" [value]="p">
-              {{ p }}
-            </option>
+            <option *ngFor="let p of packagingTypes()" [value]="p">{{ p }}</option>
           </select>
         </div>
-        <div class="col-md-1">
-          <button
-            class="btn btn-outline-secondary w-100"
-            (click)="resetFilters()"
-            title="Reset filters"
-          >
-            Reset
-          </button>
+        <div class="col-md-2">
+          <label class="form-label small text-muted mb-1">Sort by</label>
+          <select class="form-select" [(ngModel)]="sortBy" (ngModelChange)="onFilterChange()">
+            <option value="name">Name (A→Z)</option>
+            <option value="priceAsc">Price (Low → High)</option>
+            <option value="priceDesc">Price (High → Low)</option>
+            <option value="stock">Stock (High → Low)</option>
+          </select>
+        </div>
+      </div>
+
+      <hr class="my-3" />
+
+      <div class="row g-3 align-items-center">
+        <div class="col-md-6">
+          <label class="form-label small text-muted mb-1">
+            Price range: <strong>₹{{ minPrice }}</strong> — <strong>₹{{ maxPrice }}</strong>
+          </label>
+          <div class="d-flex gap-2 align-items-center">
+            <input
+              type="range"
+              class="form-range"
+              [min]="priceRange().min"
+              [max]="priceRange().max"
+              [(ngModel)]="minPrice"
+              (ngModelChange)="onFilterChange()"
+            />
+            <input
+              type="range"
+              class="form-range"
+              [min]="priceRange().min"
+              [max]="priceRange().max"
+              [(ngModel)]="maxPrice"
+              (ngModelChange)="onFilterChange()"
+            />
+          </div>
+        </div>
+
+        <div class="col-md-3 col-6">
+          <div class="form-check form-switch">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="rxOnly"
+              [(ngModel)]="rxOnly"
+              (ngModelChange)="onFilterChange()"
+            />
+            <label class="form-check-label" for="rxOnly">Rx-only items</label>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-6 text-md-end">
+          <button class="btn btn-outline-secondary" (click)="resetFilters()">Reset filters</button>
         </div>
       </div>
     </div>
   </div>
 
-  <div *ngIf="message" class="alert alert-success py-2">{{ message }}</div>
-  <div *ngIf="loading" class="text-center text-muted py-5">
-    <div class="spinner-border text-success" role="status"></div>
-    <div class="mt-2">Loading medicines...</div>
+  <!-- Loading skeletons -->
+  <div *ngIf="loading" class="row g-3">
+    <div class="col-md-6 col-lg-4" *ngFor="let _ of [0,1,2,3,4,5]">
+      <div class="bb-skeleton bb-skeleton-card"></div>
+    </div>
   </div>
 
-  <div
-    *ngIf="!loading && filtered().length === 0"
-    class="text-center text-muted py-5"
-  >
-    <h5>No medicines found.</h5>
-    <p>Try changing your search or filters.</p>
+  <!-- Empty -->
+  <div *ngIf="!loading && filtered().length === 0" class="bb-empty">
+    <div class="bb-empty-icon">🔎</div>
+    <h3>No medicines match these filters</h3>
+    <p>Try widening the price range, removing a filter or clearing the search.</p>
+    <button class="btn btn-success mt-2" (click)="resetFilters()">Reset filters</button>
   </div>
 
-  <!-- Medicine Cards -->
-  <div class="row g-3">
-    <div class="col-md-6 col-lg-4" *ngFor="let med of filtered()">
-      <div class="card h-100 shadow-sm border-0">
-        <div
-          class="position-relative bg-light d-flex align-items-center justify-content-center"
-          style="height: 180px; overflow: hidden;"
-        >
-          <img
-            *ngIf="med.imageUrl"
-            [src]="med.imageUrl"
-            class="card-img-top h-100 w-100"
-            style="object-fit: cover;"
-            alt="{{ med.name }}"
-          />
-          <span *ngIf="!med.imageUrl" class="display-4 text-success">💊</span>
+  <!-- Cards -->
+  <div class="row g-3" *ngIf="!loading">
+    <div class="col-md-6 col-lg-4" *ngFor="let med of paged()">
+      <div class="card bb-hover h-100 bb-medicine-card">
+        <div class="bb-medicine-thumb">
+          <img *ngIf="med.imageUrl" [src]="med.imageUrl" [alt]="med.name" />
+          <span *ngIf="!med.imageUrl" class="bb-medicine-thumb-fallback">💊</span>
 
-          <span
-            *ngIf="med.requiresPrescription"
-            class="position-absolute top-0 end-0 m-2 badge bg-warning text-dark"
-          >
+          <span *ngIf="med.requiresPrescription" class="bb-medicine-rx">
             Rx Required
           </span>
         </div>
@@ -117,13 +148,8 @@
             {{ med.category }} · {{ med.dosageForm }} · {{ med.strength }}
           </small>
 
-          <p class="card-text small text-muted mb-2">
-            {{ med.manufacturer }}
-          </p>
-
-          <p class="card-text small flex-grow-1">
-            {{ med.description }}
-          </p>
+          <p class="card-text small text-muted mb-2">{{ med.manufacturer }}</p>
+          <p class="card-text small flex-grow-1">{{ med.description }}</p>
 
           <div *ngIf="showDetailsId === med.id" class="small bg-light p-2 rounded mb-2">
             <div><strong>Composition:</strong> {{ med.composition }}</div>
@@ -132,35 +158,29 @@
 
           <div class="d-flex justify-content-between align-items-center mb-2">
             <span
-              class="badge"
-              [ngClass]="med.stockQuantity > 10 ? 'bg-success-subtle text-success' : (med.stockQuantity > 0 ? 'bg-warning-subtle text-warning' : 'bg-danger-subtle text-danger')"
+              class="bb-status"
+              [class.bb-status-approved]="med.stockQuantity > 10"
+              [class.bb-status-pending]="med.stockQuantity > 0 && med.stockQuantity <= 10"
+              [class.bb-status-rejected]="med.stockQuantity <= 0"
             >
               {{ med.stockQuantity > 0 ? med.stockQuantity + ' in stock' : 'Out of stock' }}
             </span>
-            <button
-              type="button"
-              class="btn btn-link btn-sm p-0 text-decoration-none"
-              (click)="toggleDetails(med.id)"
-            >
+            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none"
+                    (click)="toggleDetails(med.id)">
               {{ showDetailsId === med.id ? 'Hide details' : 'View details' }}
             </button>
           </div>
 
           <div class="d-flex gap-2">
-            <button
-              *ngIf="!auth.isAdmin()"
-              class="btn btn-success btn-sm flex-grow-1"
-              [disabled]="med.stockQuantity <= 0"
-              (click)="addToCart(med)"
-            >
+            <button *ngIf="!auth.isAdmin()"
+                    class="btn btn-success btn-sm flex-grow-1"
+                    [disabled]="med.stockQuantity <= 0"
+                    (click)="addToCart(med)">
               Add to Cart
             </button>
-
-            <button
-              *ngIf="auth.isAdmin()"
-              class="btn btn-outline-danger btn-sm flex-grow-1"
-              (click)="delete(med)"
-            >
+            <button *ngIf="auth.isAdmin()"
+                    class="btn btn-outline-danger btn-sm flex-grow-1"
+                    (click)="delete(med)">
               Delete
             </button>
           </div>
@@ -168,4 +188,19 @@
       </div>
     </div>
   </div>
-</div>
+
+  <!-- Pagination -->
+  <nav *ngIf="!loading && totalPages() > 1" class="d-flex justify-content-center mt-4" aria-label="Medicine pages">
+    <ul class="pagination">
+      <li class="page-item" [class.disabled]="page === 1">
+        <button class="page-link" (click)="setPage(page - 1)">Prev</button>
+      </li>
+      <li class="page-item" *ngFor="let p of pages()" [class.active]="p === page">
+        <button class="page-link" (click)="setPage(p)">{{ p }}</button>
+      </li>
+      <li class="page-item" [class.disabled]="page === totalPages()">
+        <button class="page-link" (click)="setPage(page + 1)">Next</button>
+      </li>
+    </ul>
+  </nav>
+</section>

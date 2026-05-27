@@ -1,21 +1,30 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
+
+export interface Entity {
+  id: number;
+  name: string;
+  description: string;
+}
+
+export type NewEntity = Omit<Entity, 'id'>;
 
 @Injectable({
   providedIn: 'root'
 })
 export class EntityService {
 
-  apiUrl = 'http://localhost:5019/api/Entity';
+  apiUrl = `${environment.apiBaseUrl}/api/Entity`;
 
   constructor(private http: HttpClient) { }
 
-  getEntities() {
-    return this.http.get(this.apiUrl);
+  getEntities(): Observable<Entity[]> {
+    return this.http.get<Entity[]>(this.apiUrl);
   }
 
-  addEntity(entity: any) {
-    return this.http.post(this.apiUrl, entity);
+  addEntity(entity: Entity | NewEntity): Observable<Entity> {
+    return this.http.post<Entity>(this.apiUrl, entity);
   }
-
 }

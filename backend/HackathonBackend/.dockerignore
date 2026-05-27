@@ -1,0 +1,11 @@
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/*.user
+**/*.suo
+**/wwwroot/prescriptions/*
+**/wwwroot/emails/*
+**/node_modules
+**/Migrations/*.Designer.cs.bak

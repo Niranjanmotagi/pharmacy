@@ -1,55 +1,75 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-success mb-4">
+<nav class="navbar navbar-expand-lg bb-navbar mb-4 shadow-sm">
   <div class="container">
-    <a class="navbar-brand fw-bold" routerLink="/dashboard">
-      💊 ByteBrigade Pharmacy
+    <a class="navbar-brand bb-brand" routerLink="/medicines">
+      <span class="bb-brand-mark">Rx</span>
+      <span class="bb-brand-name">ByteBrigade <span>Pharmacy</span></span>
     </a>
 
-    <div class="collapse navbar-collapse show">
-      <ul class="navbar-nav me-auto">
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#bbNav"
+      aria-controls="bbNav"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="bbNav">
+      <ul class="navbar-nav me-auto bb-nav">
         <li class="nav-item">
-          <a class="nav-link" routerLink="/medicines">Medicines</a>
+          <a class="nav-link" routerLink="/medicines" routerLinkActive="active">Medicines</a>
         </li>
 
         <ng-container *ngIf="auth.isLoggedIn() && !auth.isAdmin()">
           <li class="nav-item">
-            <a class="nav-link" routerLink="/cart">Cart</a>
+            <a class="nav-link" routerLink="/cart" routerLinkActive="active">Cart</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" routerLink="/orders">My Orders</a>
+            <a class="nav-link" routerLink="/orders" routerLinkActive="active">My Orders</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" routerLink="/loyalty">Loyalty</a>
+            <a class="nav-link" routerLink="/loyalty" routerLinkActive="active">Loyalty</a>
           </li>
         </ng-container>
 
         <ng-container *ngIf="auth.isAdmin()">
           <li class="nav-item">
-            <a class="nav-link" routerLink="/add-medicine">Add Medicine</a>
+            <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" routerLink="/admin-orders">All Orders</a>
+            <a class="nav-link" routerLink="/add-medicine" routerLinkActive="active">Add Medicine</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/admin-orders" routerLinkActive="active">All Orders</a>
           </li>
         </ng-container>
       </ul>
 
-      <ul class="navbar-nav ms-auto">
+      <ul class="navbar-nav ms-auto align-items-lg-center">
         <ng-container *ngIf="auth.isLoggedIn(); else loginLinks">
-          <li class="nav-item">
-            <span class="nav-link">
-              Hi, <b>{{ auth.getUsername() }}</b>
-              <span class="badge bg-light text-dark ms-1">{{ auth.getRole() }}</span>
+          <li class="nav-item me-lg-2">
+            <span class="bb-user-chip">
+              <span class="bb-user-avatar">{{ (auth.getUsername() || '?').charAt(0).toUpperCase() }}</span>
+              <span class="bb-user-meta">
+                <small>Signed in as</small>
+                <strong>{{ auth.getUsername() }}</strong>
+              </span>
+              <span class="bb-user-role">{{ auth.getRole() }}</span>
             </span>
           </li>
           <li class="nav-item">
-            <button class="btn btn-outline-light btn-sm ms-2" (click)="logout()">Logout</button>
+            <button class="btn btn-outline-light btn-sm" (click)="logout()">Logout</button>
           </li>
         </ng-container>
         <ng-template #loginLinks>
           <li class="nav-item">
             <a class="nav-link" routerLink="/login">Login</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/register">Register</a>
+          <li class="nav-item ms-lg-2">
+            <a class="btn btn-light btn-sm" routerLink="/register">Sign Up</a>
           </li>
         </ng-template>
       </ul>

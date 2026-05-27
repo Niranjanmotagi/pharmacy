@@ -21,6 +21,10 @@ export interface Order {
   orderDate: string;
   estimatedDeliveryDate?: string | null;
   status: string;
+  rejectionReason?: string | null;
+  deliveryAddress?: string;
+  deliveryPhone?: string;
+  deliveryNotes?: string;
   prescriptionFile?: string;
   items: OrderItem[];
 }

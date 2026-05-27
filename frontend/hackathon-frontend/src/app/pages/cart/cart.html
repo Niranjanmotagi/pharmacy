@@ -1,21 +1,39 @@
 <app-navbar></app-navbar>
 
-<div class="container">
+<div class="container bb-page">
   <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
     <div>
-      <h2 class="text-success mb-1">My Cart</h2>
-      <p class="text-muted mb-0">Review medicines, adjust quantities, and continue to checkout.</p>
+      <span class="bb-chip mb-1">Your cart</span>
+      <h2 class="mb-1">Review &amp; purchase</h2>
+      <p class="text-muted mb-0">
+        Adjust quantities, upload your prescription if needed, then place your order.
+      </p>
     </div>
-    <a routerLink="/medicines" class="btn btn-outline-success">Add Medicines</a>
+    <a routerLink="/medicines" class="btn btn-outline-success">+ Add Medicines</a>
   </div>
 
-  <div *ngIf="loading" class="text-center text-muted py-4">Loading...</div>
+  <!-- Loading skeletons -->
+  <div *ngIf="loading" class="row g-3">
+    <div class="col-12">
+      <div class="card"><div class="card-body">
+        <span class="bb-skeleton mb-2" style="height:1.2rem;width:30%;"></span>
+        <span class="bb-skeleton mb-2" style="height:0.9rem;width:80%;"></span>
+        <span class="bb-skeleton" style="height:0.9rem;width:60%;"></span>
+      </div></div>
+    </div>
+  </div>
+
   <div *ngIf="error" class="alert alert-danger py-2">{{ error }}</div>
 
-  <div *ngIf="!loading && items.length === 0" class="alert alert-info">
-    Your cart is empty. <a routerLink="/medicines">Browse medicines</a>.
+  <!-- Empty -->
+  <div *ngIf="!loading && items.length === 0" class="bb-empty">
+    <div class="bb-empty-icon">🛒</div>
+    <h3>Your cart is empty</h3>
+    <p>Browse medicines and add the ones you need.</p>
+    <a routerLink="/medicines" class="btn btn-success mt-2">Browse medicines</a>
   </div>
 
+  <!-- Cart card -->
   <div class="card shadow-sm" *ngIf="!loading && items.length > 0">
     <div class="card-body">
       <div class="table-responsive">
@@ -24,7 +42,7 @@
             <tr>
               <th>Medicine</th>
               <th>Price</th>
-              <th style="min-width: 150px;">Quantity</th>
+              <th style="min-width: 170px;">Quantity</th>
               <th>Subtotal</th>
               <th class="text-end">Action</th>
             </tr>
@@ -32,44 +50,45 @@
           <tbody>
             <tr *ngFor="let item of items">
               <td>
-                <b>{{ item.medicine?.name }}</b>
-                <div class="small text-muted">{{ item.medicine?.category }}</div>
-                <span *ngIf="item.medicine?.requiresPrescription"
-                      class="badge bg-warning text-dark mt-1">Rx required</span>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="bb-cart-thumb">
+                    <img *ngIf="item.medicine?.imageUrl" [src]="item.medicine?.imageUrl" alt="" />
+                    <span *ngIf="!item.medicine?.imageUrl">💊</span>
+                  </div>
+                  <div>
+                    <b>{{ item.medicine?.name }}</b>
+                    <div class="small text-muted">
+                      {{ item.medicine?.category }}
+                      <span *ngIf="item.medicine?.dosageForm">
+                        · {{ item.medicine?.dosageForm }}
+                      </span>
+                    </div>
+                    <span *ngIf="item.medicine?.requiresPrescription"
+                          class="bb-status bb-status-pending mt-1 d-inline-block">
+                      Rx required
+                    </span>
+                  </div>
+                </div>
               </td>
-              <td>₹{{ item.medicine?.price }}</td>
+              <td class="text-nowrap">₹{{ item.medicine?.price }}</td>
               <td>
-                <div class="input-group input-group-sm">
-                  <button
-                    type="button"
-                    class="btn btn-outline-secondary"
-                    [disabled]="item.quantity <= 1 || updatingId === item.id"
-                    (click)="updateQuantity(item, item.quantity - 1)"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    class="form-control text-center"
-                    min="1"
-                    [max]="item.medicine?.stockQuantity"
-                    [value]="item.quantity"
-                    [disabled]="updatingId === item.id"
-                    (change)="updateQuantity(item, $any($event.target).value)"
-                    aria-label="Cart item quantity"
-                  />
-                  <button
-                    type="button"
-                    class="btn btn-outline-secondary"
-                    [disabled]="item.quantity >= (item.medicine?.stockQuantity || item.quantity) || updatingId === item.id"
-                    (click)="updateQuantity(item, item.quantity + 1)"
-                  >
-                    +
-                  </button>
+                <div class="input-group input-group-sm bb-qty">
+                  <button type="button" class="btn btn-outline-secondary"
+                          [disabled]="item.quantity <= 1 || updatingId === item.id"
+                          (click)="updateQuantity(item, item.quantity - 1)">−</button>
+                  <input type="number" class="form-control text-center" min="1"
+                         [max]="item.medicine?.stockQuantity"
+                         [value]="item.quantity"
+                         [disabled]="updatingId === item.id"
+                         (change)="updateQuantity(item, $any($event.target).value)"
+                         aria-label="Cart item quantity" />
+                  <button type="button" class="btn btn-outline-secondary"
+                          [disabled]="item.quantity >= (item.medicine?.stockQuantity || item.quantity) || updatingId === item.id"
+                          (click)="updateQuantity(item, item.quantity + 1)">+</button>
                 </div>
                 <small class="text-muted">{{ item.medicine?.stockQuantity }} available</small>
               </td>
-              <td class="fw-semibold">₹{{ lineTotal(item) }}</td>
+              <td class="fw-semibold text-nowrap">₹{{ lineTotal(item) }}</td>
               <td class="text-end">
                 <button class="btn btn-sm btn-outline-danger" (click)="remove(item)">Remove</button>
               </td>
@@ -78,17 +97,17 @@
           <tfoot>
             <tr>
               <td colspan="3" class="text-end fw-bold">Total</td>
-              <td class="fw-bold text-success">₹{{ total() }}</td>
+              <td class="fw-bold text-success fs-5">₹{{ total() }}</td>
               <td></td>
             </tr>
           </tfoot>
         </table>
       </div>
 
-      <!-- Prescription upload (only when any cart item needs Rx) -->
+      <!-- Prescription upload -->
       <div *ngIf="needsPrescription()" class="alert alert-warning">
         <div class="d-flex align-items-start gap-2 mb-2">
-          <span class="badge bg-warning text-dark">Rx</span>
+          <span class="bb-status bb-status-pending">Rx</span>
           <div>
             <strong>Prescription required.</strong>
             One or more items in your cart need a valid prescription.
@@ -96,12 +115,9 @@
             (<strong>JPG or PNG only</strong>) before purchasing.
           </div>
         </div>
-        <input
-          type="file"
-          class="form-control"
-          accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-          (change)="onFile($event)"
-        />
+        <input type="file" class="form-control"
+               accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+               (change)="onFile($event)" />
         <small class="text-muted d-block mt-1">Accepted: .jpg, .jpeg, .png</small>
         <small *ngIf="selectedFile" class="text-success d-block mt-1">
           ✓ Selected: {{ selectedFile.name }}
@@ -109,17 +125,12 @@
       </div>
 
       <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
-        <div class="text-muted">
-          {{ items.length }} item(s) in cart
-        </div>
+        <div class="text-muted">{{ items.length }} item(s) in cart</div>
 
         <div class="d-flex gap-2">
-          <button
-            type="button"
-            class="btn btn-success"
-            [disabled]="purchasing || items.length === 0"
-            (click)="purchase()"
-          >
+          <button type="button" class="btn btn-success px-4"
+                  [disabled]="purchasing || items.length === 0"
+                  (click)="purchase()">
             <span *ngIf="!purchasing">Purchase</span>
             <span *ngIf="purchasing">
               <span class="spinner-border spinner-border-sm me-2"></span>

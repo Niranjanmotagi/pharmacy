@@ -1,62 +1,128 @@
 <app-navbar></app-navbar>
 
-<div class="container">
-  <div class="p-4 mb-4 bg-light rounded-3 border">
-    <h1 class="display-6">Welcome, {{ auth.getUsername() }} 👋</h1>
-    <p class="lead mb-0">
-      You are signed in as <b>{{ auth.getRole() }}</b>.
-    </p>
-  </div>
+<div class="container bb-page">
+  <!-- Hero -->
+  <section class="bb-hero mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+    <div>
+      <span class="bb-chip mb-2" style="background: rgba(255,255,255,0.18); color: #fff;">
+        {{ auth.isAdmin() ? 'Admin Console' : 'Welcome' }}
+      </span>
+      <h1 class="mb-1">Hello, {{ auth.getUsername() }}</h1>
+      <p class="mb-0">
+        {{ auth.isAdmin()
+            ? 'Monitor inventory, validate prescriptions, and approve customer orders.'
+            : 'Browse medicines, manage your cart and check your orders.' }}
+      </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a routerLink="/medicines" class="btn btn-light">Browse Medicines</a>
+      <ng-container *ngIf="auth.isAdmin()">
+        <a routerLink="/admin-orders" class="btn btn-light">Manage Orders</a>
+      </ng-container>
+      <ng-container *ngIf="!auth.isAdmin()">
+        <a routerLink="/cart" class="btn btn-light">My Cart</a>
+      </ng-container>
+    </div>
+  </section>
 
-  <div class="row g-3">
+  <!-- Admin stats -->
+  <section *ngIf="auth.isAdmin()" class="mb-4">
+    <div class="row g-3">
+      <div class="col-6 col-lg-3" *ngFor="let i of [0,1,2,3,4]; let idx = index"
+           [hidden]="idx > 4">
+        <ng-container [ngSwitch]="idx">
+          <div class="card h-100 bb-stat">
+            <div class="card-body">
+              <div class="bb-stat-label">
+                <span *ngSwitchCase="0">Total Medicines</span>
+                <span *ngSwitchCase="1">Total Orders</span>
+                <span *ngSwitchCase="2">Pending Validations</span>
+                <span *ngSwitchCase="3">Low Stock (≤ 50)</span>
+                <span *ngSwitchDefault>Total Revenue</span>
+              </div>
+              <div class="bb-stat-value">
+                <ng-container *ngIf="loading">
+                  <span class="bb-skeleton" style="height:1.8rem;width:60%;"></span>
+                </ng-container>
+                <ng-container *ngIf="!loading">
+                  <span *ngSwitchCase="0">{{ totalMedicines() }}</span>
+                  <span *ngSwitchCase="1">{{ totalOrders() }}</span>
+                  <span *ngSwitchCase="2">{{ pendingValidations() }}</span>
+                  <span *ngSwitchCase="3">{{ lowStockCount() }}</span>
+                  <span *ngSwitchDefault>₹{{ totalRevenue() | number:'1.0-0' }}</span>
+                </ng-container>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick actions -->
+  <section class="row g-3">
     <div class="col-md-4">
-      <div class="card h-100 shadow-sm">
+      <div class="card bb-hover h-100">
         <div class="card-body">
-          <h5 class="card-title">Browse Medicines</h5>
-          <p class="card-text">View the full catalog of medicines available in store.</p>
+          <h5 class="card-title">Browse medicines</h5>
+          <p class="card-text text-muted">
+            View the full catalog with filters for category, dosage and packaging.
+          </p>
           <a routerLink="/medicines" class="btn btn-success">Browse</a>
         </div>
       </div>
     </div>
 
-    <div class="col-md-4" *ngIf="!auth.isAdmin()">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">My Cart</h5>
-          <p class="card-text">Review items in your cart and place an order.</p>
-          <a routerLink="/cart" class="btn btn-outline-success">Open Cart</a>
+    <ng-container *ngIf="!auth.isAdmin()">
+      <div class="col-md-4">
+        <div class="card bb-hover h-100">
+          <div class="card-body">
+            <h5 class="card-title">My cart</h5>
+            <p class="card-text text-muted">
+              Review items in your cart, upload prescriptions and place orders.
+            </p>
+            <a routerLink="/cart" class="btn btn-outline-success">Open cart</a>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="col-md-4" *ngIf="!auth.isAdmin()">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">My Orders</h5>
-          <p class="card-text">Track your previous and pending orders.</p>
-          <a routerLink="/orders" class="btn btn-outline-success">View Orders</a>
+      <div class="col-md-4">
+        <div class="card bb-hover h-100">
+          <div class="card-body">
+            <h5 class="card-title">My orders</h5>
+            <p class="card-text text-muted">
+              Track your previous and pending orders with delivery estimates.
+            </p>
+            <a routerLink="/orders" class="btn btn-outline-success">View orders</a>
+          </div>
         </div>
       </div>
-    </div>
+    </ng-container>
 
-    <div class="col-md-4" *ngIf="auth.isAdmin()">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Add / Manage Medicine</h5>
-          <p class="card-text">Create new medicines or update inventory.</p>
-          <a routerLink="/add-medicine" class="btn btn-outline-success">Add Medicine</a>
+    <ng-container *ngIf="auth.isAdmin()">
+      <div class="col-md-4">
+        <div class="card bb-hover h-100">
+          <div class="card-body">
+            <h5 class="card-title">Add medicine</h5>
+            <p class="card-text text-muted">
+              Create new medicines or update inventory, prices and Rx flags.
+            </p>
+            <a routerLink="/add-medicine" class="btn btn-outline-success">Open form</a>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="col-md-4" *ngIf="auth.isAdmin()">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">All Orders</h5>
-          <p class="card-text">Review and update the status of customer orders.</p>
-          <a routerLink="/admin-orders" class="btn btn-outline-success">Admin Orders</a>
+      <div class="col-md-4">
+        <div class="card bb-hover h-100">
+          <div class="card-body">
+            <h5 class="card-title">All orders</h5>
+            <p class="card-text text-muted">
+              Review customer orders, validate prescriptions, approve or reject.
+            </p>
+            <a routerLink="/admin-orders" class="btn btn-outline-success">Admin orders</a>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
+    </ng-container>
+  </section>
 </div>

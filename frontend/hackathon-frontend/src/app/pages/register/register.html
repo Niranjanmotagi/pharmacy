@@ -1,51 +1,218 @@
 <app-navbar></app-navbar>
 
-<div class="container" style="max-width: 560px;">
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <h3 class="card-title text-success mb-3">Create Customer Account</h3>
+<main class="register-page bb-page">
+  <div class="container">
+    <div class="row g-4 g-xl-5 align-items-stretch justify-content-center">
+      <!-- LEFT: brand panel -->
+      <section class="col-lg-5">
+        <div class="card h-100 border-0 brand-panel">
+          <div class="card-body p-4 p-lg-5">
+            <span class="bb-chip mb-3">Join ByteBrigade</span>
+            <h1 class="display-6 mb-2">Create your pharmacy account</h1>
+            <p class="text-muted">
+              Order medicines, upload prescriptions, track delivery and earn
+              loyalty points — all in one place.
+            </p>
 
-      <div *ngIf="error" class="alert alert-danger py-2">{{ error }}</div>
-      <div *ngIf="success" class="alert alert-success py-2">{{ success }}</div>
-
-      <form (ngSubmit)="register()">
-        <div class="row">
-          <div class="col mb-2">
-            <label class="form-label">First Name</label>
-            <input class="form-control" name="firstName" [(ngModel)]="firstName" />
+            <ul class="list-unstyled mt-4 mb-0 brand-points">
+              <li><span>1</span> Browse 50+ medicines across categories</li>
+              <li><span>2</span> Upload prescriptions securely</li>
+              <li><span>3</span> Earn 1 point for every ₹10 spent</li>
+              <li><span>4</span> Real-time order status updates</li>
+            </ul>
           </div>
-          <div class="col mb-2">
-            <label class="form-label">Last Name</label>
-            <input class="form-control" name="lastName" [(ngModel)]="lastName" />
+        </div>
+      </section>
+
+      <!-- RIGHT: form -->
+      <section class="col-lg-7 col-xl-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4 p-lg-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h2 class="h4 mb-0">Sign up</h2>
+              <a routerLink="/login" class="small text-decoration-none">
+                Already have an account? <strong>Login</strong>
+              </a>
+            </div>
+
+            <div *ngIf="serverError" class="alert alert-danger py-2">
+              {{ serverError }}
+            </div>
+
+            <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+              <div class="row g-3">
+                <!-- First name -->
+                <div class="col-md-6">
+                  <label class="form-label" for="firstName">First name</label>
+                  <input
+                    id="firstName"
+                    class="form-control"
+                    formControlName="firstName"
+                    autocomplete="given-name"
+                    [class.is-invalid]="invalid('firstName')"
+                  />
+                  <div class="bb-field-error" *ngIf="hasError('firstName', 'required')">
+                    First name is required.
+                  </div>
+                  <div class="bb-field-error" *ngIf="hasError('firstName', 'pattern')">
+                    Only letters allowed (max 30 characters).
+                  </div>
+                </div>
+
+                <!-- Last name -->
+                <div class="col-md-6">
+                  <label class="form-label" for="lastName">Last name</label>
+                  <input
+                    id="lastName"
+                    class="form-control"
+                    formControlName="lastName"
+                    autocomplete="family-name"
+                    [class.is-invalid]="invalid('lastName')"
+                  />
+                  <div class="bb-field-error" *ngIf="hasError('lastName', 'required')">
+                    Last name is required.
+                  </div>
+                  <div class="bb-field-error" *ngIf="hasError('lastName', 'pattern')">
+                    Only letters allowed (max 30 characters).
+                  </div>
+                </div>
+
+                <!-- Username -->
+                <div class="col-md-6">
+                  <label class="form-label" for="username">Username</label>
+                  <input
+                    id="username"
+                    class="form-control"
+                    formControlName="username"
+                    autocomplete="username"
+                    [class.is-invalid]="invalid('username')"
+                  />
+                  <div class="bb-field-error" *ngIf="hasError('username', 'required')">
+                    Username is required.
+                  </div>
+                  <div class="bb-field-error" *ngIf="hasError('username', 'pattern')">
+                    4–20 letters only, no numbers or spaces.
+                  </div>
+                </div>
+
+                <!-- Phone -->
+                <div class="col-md-6">
+                  <label class="form-label" for="phoneNumber">Phone number</label>
+                  <input
+                    id="phoneNumber"
+                    class="form-control"
+                    formControlName="phoneNumber"
+                    autocomplete="tel"
+                    inputmode="numeric"
+                    maxlength="10"
+                    [class.is-invalid]="invalid('phoneNumber')"
+                  />
+                  <div class="bb-field-error" *ngIf="hasError('phoneNumber', 'required')">
+                    Phone number is required.
+                  </div>
+                  <div class="bb-field-error" *ngIf="hasError('phoneNumber', 'pattern')">
+                    Phone must be exactly 10 digits.
+                  </div>
+                </div>
+
+                <!-- Email -->
+                <div class="col-12">
+                  <label class="form-label" for="email">Email</label>
+                  <input
+                    id="email"
+                    type="email"
+                    class="form-control"
+                    formControlName="email"
+                    autocomplete="email"
+                    [class.is-invalid]="invalid('email')"
+                  />
+                  <div class="bb-field-error" *ngIf="hasError('email', 'required')">
+                    Email is required.
+                  </div>
+                  <div class="bb-field-error" *ngIf="hasError('email', 'email')">
+                    Enter a valid email address.
+                  </div>
+                </div>
+
+                <!-- Password -->
+                <div class="col-md-6">
+                  <label class="form-label" for="password">Password</label>
+                  <div class="bb-password-wrap">
+                    <input
+                      id="password"
+                      [type]="showPassword ? 'text' : 'password'"
+                      class="form-control"
+                      formControlName="password"
+                      autocomplete="new-password"
+                      [class.is-invalid]="invalid('password')"
+                    />
+                    <button type="button" class="bb-eye"
+                            (click)="togglePassword()"
+                            [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+                      {{ showPassword ? 'Hide' : 'Show' }}
+                    </button>
+                  </div>
+
+                  <div class="bb-strength" [ngClass]="'s' + strengthScore()">
+                    <span></span><span></span><span></span><span></span><span></span>
+                  </div>
+                  <div class="bb-strength-label">{{ strengthLabel() }}</div>
+
+                  <div class="bb-field-error" *ngIf="hasError('password', 'required')">
+                    Password is required.
+                  </div>
+                  <div class="bb-field-error" *ngIf="hasError('password', 'pattern')">
+                    8+ chars with uppercase, lowercase, number &amp; special char.
+                  </div>
+                </div>
+
+                <!-- Confirm password -->
+                <div class="col-md-6">
+                  <label class="form-label" for="confirmPassword">Confirm password</label>
+                  <div class="bb-password-wrap">
+                    <input
+                      id="confirmPassword"
+                      [type]="showConfirm ? 'text' : 'password'"
+                      class="form-control"
+                      formControlName="confirmPassword"
+                      autocomplete="new-password"
+                      [class.is-invalid]="invalid('confirmPassword') || showConfirmMismatch()"
+                    />
+                    <button type="button" class="bb-eye"
+                            (click)="toggleConfirm()"
+                            [attr.aria-label]="showConfirm ? 'Hide password' : 'Show password'">
+                      {{ showConfirm ? 'Hide' : 'Show' }}
+                    </button>
+                  </div>
+                  <div class="bb-field-error" *ngIf="hasError('confirmPassword', 'required')">
+                    Please re-enter your password.
+                  </div>
+                  <div class="bb-field-error" *ngIf="showConfirmMismatch()">
+                    Passwords do not match.
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                class="btn btn-success btn-lg w-100 mt-4"
+                [disabled]="loading"
+              >
+                <span *ngIf="!loading">Create account</span>
+                <span *ngIf="loading">
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Creating account...
+                </span>
+              </button>
+
+              <p class="text-muted small mt-3 mb-0 text-center">
+                By signing up you agree to ByteBrigade's terms and acknowledge
+                that prescription items require valid documentation.
+              </p>
+            </form>
           </div>
         </div>
-
-        <div class="mb-2">
-          <label class="form-label">Email</label>
-          <input type="email" class="form-control" name="email" [(ngModel)]="email" />
-        </div>
-
-        <div class="mb-2">
-          <label class="form-label">Phone Number</label>
-          <input class="form-control" name="phoneNumber" [(ngModel)]="phoneNumber" />
-        </div>
-
-        <div class="mb-2">
-          <label class="form-label">Username <span class="text-danger">*</span></label>
-          <input class="form-control" name="username" [(ngModel)]="username" required />
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Password <span class="text-danger">*</span></label>
-          <input type="password" class="form-control" name="password" [(ngModel)]="password" required />
-        </div>
-
-        <button type="submit" class="btn btn-success w-100">Register</button>
-      </form>
-
-      <p class="mt-3 mb-0 text-center">
-        Already registered? <a routerLink="/login">Login</a>
-      </p>
+      </section>
     </div>
   </div>
-</div>
+</main>

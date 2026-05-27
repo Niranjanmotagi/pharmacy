@@ -1,21 +1,19 @@
-.navbar {
-  height: 60px;
-  background-color: #1976d2;
-  color: white;
-
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  padding: 0 20px;
+.bb-stat .bb-stat-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bb-text-soft);
+  font-weight: 600;
+  margin-bottom: 0.35rem;
 }
 
-.navbar button {
-  padding: 8px 15px;
-  border: none;
-  cursor: pointer;
+.bb-stat .bb-stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--bb-primary-700);
+  line-height: 1.1;
 }
 
-.content {
-  padding: 20px;
+.bb-stat {
+  border-left: 4px solid var(--bb-primary-100);
 }

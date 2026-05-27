@@ -3,15 +3,17 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { CartService } from '../../services/cart.service';
-import { OrderService } from '../../services/order.service';
+import { OrderService, PlaceOrderResponse } from '../../services/order.service';
 import { CartItem } from '../../models/cart-item.model';
 import { Navbar } from '../../components/navbar/navbar';
+import { readErrorMessage } from '../../shared/http-error';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, Navbar],
-  templateUrl: './cart.html'
+  templateUrl: './cart.html',
+  styleUrl: './cart.css'
 })
 export class Cart implements OnInit {
   items: CartItem[] = [];
@@ -29,32 +31,37 @@ export class Cart implements OnInit {
     private router: Router
   ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.load();
   }
 
-  load(clearError = true) {
+  load(clearError = true): void {
     this.loading = true;
     if (clearError) this.error = '';
     this.cartService.getMyCart().subscribe({
-      next: (data) => {
-        this.items = data;
+      next: (data: CartItem[]) => {
+        this.items = data ?? [];
         this.loading = false;
         this.updatingId = null;
       },
-      error: () => {
+      error: (err: unknown) => {
         this.loading = false;
         this.updatingId = null;
-        this.error = 'Unable to load your cart.';
+        this.error = readErrorMessage(err, 'Unable to load your cart.');
       }
     });
   }
 
-  remove(item: CartItem) {
-    this.cartService.remove(item.id).subscribe(() => this.load());
+  remove(item: CartItem): void {
+    this.cartService.remove(item.id).subscribe({
+      next: () => this.load(),
+      error: (err: unknown) => {
+        this.error = readErrorMessage(err, 'Could not remove the item.');
+      }
+    });
   }
 
-  updateQuantity(item: CartItem, quantityValue: number | string) {
+  updateQuantity(item: CartItem, quantityValue: number | string): void {
     const quantity = Math.trunc(Number(quantityValue));
     if (!Number.isFinite(quantity) || quantity < 1) {
       this.error = 'Quantity must be at least 1.';
@@ -73,9 +80,9 @@ export class Cart implements OnInit {
     this.updatingId = item.id;
     this.cartService.updateQuantity(item.id, quantity).subscribe({
       next: () => this.load(),
-      error: (err) => {
+      error: (err: unknown) => {
         this.updatingId = null;
-        this.error = err?.error?.message || 'Unable to update quantity.';
+        this.error = readErrorMessage(err, 'Unable to update quantity.');
         this.load(false);
       }
     });
@@ -93,8 +100,9 @@ export class Cart implements OnInit {
     return this.items.some((i) => i.medicine?.requiresPrescription);
   }
 
-  onFile(event: any) {
-    const file: File | undefined = event?.target?.files?.[0];
+  onFile(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const file: File | undefined = input?.files?.[0];
     this.error = '';
 
     if (!file) {
@@ -115,7 +123,9 @@ export class Cart implements OnInit {
     if (!isJpgOrPng) {
       this.selectedFile = null;
       // Reset the input so the user can re-pick the same file after fixing
-      try { event.target.value = ''; } catch {}
+      if (input) {
+        try { input.value = ''; } catch { /* ignore */ }
+      }
       this.error = 'Only JPG or PNG images are allowed for the prescription.';
       return;
     }
@@ -123,43 +133,40 @@ export class Cart implements OnInit {
     this.selectedFile = file;
   }
 
-  purchase() {
+  purchase(): void {
     if (this.purchasing || this.items.length === 0) return;
 
     if (this.needsPrescription() && !this.selectedFile) {
       this.error =
-        'Some items in your cart require a prescription. Please upload it (JPG / PNG / PDF) before purchasing.';
+        'Some items in your cart require a prescription. Please upload a JPG or PNG before purchasing.';
       return;
     }
 
     this.purchasing = true;
     this.error = '';
 
-    // Place the order on the backend (saves order, reduces stock, clears cart,
-    // awards loyalty points, sends confirmation email).
     this.orderService
       .placeOrder({
         prescription: this.selectedFile,
-        // Cart-page quick purchase uses sensible defaults; full checkout page
-        // collects address / phone / payment for a complete flow.
         address: 'To be collected at delivery',
         phone: '0000000000',
         notes: 'Quick purchase from cart'
       })
       .subscribe({
-        next: () => {
+        next: (_res: PlaceOrderResponse) => {
           this.purchasing = false;
           this.items = [];
           this.selectedFile = null;
           alert('Order confirmed — waiting for validation');
           this.router.navigate(['/orders']);
         },
-        error: (err) => {
+        error: (err: unknown) => {
           console.error(err);
           this.purchasing = false;
-          this.error =
-            err?.error?.message ||
-            'Could not place the order. Please try again.';
+          this.error = readErrorMessage(
+            err,
+            'Could not place the order. Please try again.'
+          );
         }
       });
   }

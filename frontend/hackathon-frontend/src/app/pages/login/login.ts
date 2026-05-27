@@ -1,9 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
+import { AuthService, LoginResponse } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
 import { Navbar } from '../../components/navbar/navbar';
+import { readErrorMessage } from '../../shared/http-error';
 
 @Component({
   selector: 'app-login',
@@ -13,24 +15,43 @@ import { Navbar } from '../../components/navbar/navbar';
   styleUrl: './login.css'
 })
 export class Login {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private toast = inject(ToastService);
+
   username = '';
   password = '';
   error = '';
   loading = false;
+  showPassword = false;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  togglePassword(): void { this.showPassword = !this.showPassword; }
 
-  login() {
+  login(form: NgForm): void {
+    if (form.invalid) {
+      form.control.markAllAsTouched();
+      this.toast.error('Please enter your username and password.');
+      return;
+    }
+
     this.error = '';
     this.loading = true;
-    this.authService.login(this.username, this.password).subscribe({
-      next: () => {
+    this.authService.login(this.username.trim(), this.password).subscribe({
+      next: (res: LoginResponse) => {
         this.loading = false;
-        this.router.navigate(['/dashboard']);
+        this.toast.success(`Welcome back, ${res.username}!`);
+        this.router.navigate([
+          res.role === 'Admin' ? '/dashboard' : '/medicines'
+        ]);
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.loading = false;
-        this.error = err?.error?.message || 'Login failed';
+        const msg = readErrorMessage(
+          err,
+          'Login failed. Please check your credentials.'
+        );
+        this.error = msg;
+        this.toast.error('Login failed', msg);
       }
     });
   }

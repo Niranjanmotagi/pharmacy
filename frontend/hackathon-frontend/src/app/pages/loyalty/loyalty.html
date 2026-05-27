@@ -1,45 +1,69 @@
 <app-navbar></app-navbar>
 
-<div class="container">
-  <h2 class="text-success mb-3">Loyalty Rewards</h2>
-
-  <div class="card mb-4 shadow-sm">
-    <div class="card-body d-flex justify-content-between align-items-center">
-      <div>
-        <h5 class="mb-1">Your Points Balance</h5>
-        <small class="text-muted">Earn 1 point for every ₹10 spent.</small>
-      </div>
-      <div class="display-5 text-success fw-bold">{{ points }}</div>
+<div class="container bb-page">
+  <div class="bb-hero d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+    <div>
+      <span class="bb-chip mb-2" style="background: rgba(255,255,255,0.18); color: #fff;">
+        Loyalty rewards
+      </span>
+      <h1 class="mb-1">Your points</h1>
+      <p class="mb-0">
+        Earn 1 point for every ₹10 spent. Redeem on future orders.
+      </p>
+    </div>
+    <div class="text-md-end">
+      <div class="bb-hero-points">{{ points }}</div>
+      <small class="text-light opacity-75">total points</small>
     </div>
   </div>
 
   <div class="card shadow-sm">
     <div class="card-body">
-      <h5 class="card-title mb-3">Transaction History</h5>
+      <h5 class="card-title mb-3">Transaction history</h5>
 
-      <div *ngIf="loading" class="text-center text-muted py-3">Loading...</div>
-      <div *ngIf="!loading && transactions.length === 0" class="text-muted text-center py-3">
-        No loyalty transactions yet.
+      <div *ngIf="loading" class="row g-2">
+        <div class="col-12" *ngFor="let _ of [0,1,2]">
+          <span class="bb-skeleton" style="height:1.5rem;"></span>
+        </div>
       </div>
 
-      <table *ngIf="!loading && transactions.length > 0" class="table table-sm">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Description</th>
-            <th class="text-end">Earned</th>
-            <th class="text-end">Redeemed</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let t of transactions">
-            <td>{{ t.transactionDate | date: 'medium' }}</td>
-            <td>{{ t.description }}</td>
-            <td class="text-end text-success">+{{ t.pointsEarned }}</td>
-            <td class="text-end text-danger">-{{ t.pointsRedeemed }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div *ngIf="!loading && transactions.length === 0" class="bb-empty">
+        <div class="bb-empty-icon">🪙</div>
+        <h3>No loyalty transactions yet</h3>
+        <p>Place your first order to start earning points.</p>
+        <a routerLink="/medicines" class="btn btn-success mt-2">Browse medicines</a>
+      </div>
+
+      <div class="table-responsive" *ngIf="!loading && transactions.length > 0">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th class="text-end">Earned</th>
+              <th class="text-end">Redeemed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of transactions">
+              <td>{{ t.transactionDate | date: 'medium' }}</td>
+              <td>{{ t.description }}</td>
+              <td class="text-end text-success fw-semibold">+{{ t.pointsEarned }}</td>
+              <td class="text-end text-danger">-{{ t.pointsRedeemed }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
+
+<style>
+  .bb-hero-points {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  }
+</style>

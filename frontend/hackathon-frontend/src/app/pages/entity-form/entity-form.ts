@@ -2,7 +2,13 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
-import { EntityService } from '../../services/entity.service';
+import { Entity, EntityService } from '../../services/entity.service';
+
+interface EntityFormModel {
+  id: number;
+  name: string;
+  description: string;
+}
 
 @Component({
   selector: 'app-entity-form',
@@ -13,7 +19,7 @@ import { EntityService } from '../../services/entity.service';
 })
 export class EntityForm {
 
-  entity = {
+  entity: EntityFormModel = {
     id: 0,
     name: '',
     description: ''
@@ -24,23 +30,15 @@ export class EntityForm {
     private router: Router
   ) {}
 
-  addEntity() {
-
+  addEntity(): void {
     this.entityService.addEntity(this.entity).subscribe({
-      next: (response) => {
-
-        console.log(response);
-
+      next: (_response: Entity) => {
         alert('Entity Added');
-
         this.router.navigate(['/entities']);
-
       },
-      error: (error) => {
-        console.log(error);
+      error: (err: unknown) => {
+        console.error('[entity-form] failed to add entity', err);
       }
     });
-
   }
-
 }

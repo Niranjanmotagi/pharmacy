@@ -1,0 +1,66 @@
+<div class="bb-modal-backdrop" *ngIf="show" (click)="closeModal()"></div>
+<div class="bb-modal" *ngIf="show" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+  <div class="bb-modal-header">
+    <h5 class="mb-0">
+      {{ action === 'approve' ? 'Approve order' : 'Reject order' }}
+      <small class="text-muted ms-2">{{ orderNumber }}</small>
+    </h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+  </div>
+
+  <div class="bb-modal-body">
+    <!-- Approve -->
+    <ng-container *ngIf="action === 'approve'">
+      <p class="text-muted">
+        Confirm approval and set an estimated delivery date. The customer will
+        receive a notification email.
+      </p>
+      <label class="form-label fw-bold" for="eta">Estimated delivery date</label>
+      <input
+        id="eta"
+        type="date"
+        class="form-control"
+        [(ngModel)]="estimatedDeliveryDate"
+      />
+    </ng-container>
+
+    <!-- Reject -->
+    <ng-container *ngIf="action === 'reject'">
+      <p class="text-muted">
+        Rejection is final. Stock for these items will be restored and the
+        customer will be notified by email with your reason.
+      </p>
+      <label class="form-label fw-bold" for="reason">Reason for rejection</label>
+      <textarea
+        id="reason"
+        class="form-control"
+        rows="3"
+        placeholder="e.g. Prescription is not legible. Please re-upload."
+        [(ngModel)]="reason"
+      ></textarea>
+      <small class="text-muted">A reason is required so the customer can take action.</small>
+    </ng-container>
+  </div>
+
+  <div class="bb-modal-footer">
+    <button type="button" class="btn btn-outline-secondary" [disabled]="submitting" (click)="closeModal()">
+      Cancel
+    </button>
+    <button
+      type="button"
+      class="btn"
+      [class.btn-success]="action === 'approve'"
+      [class.btn-danger]="action === 'reject'"
+      [disabled]="submitting || (action === 'reject' && !reason.trim())"
+      (click)="submit()"
+    >
+      <span *ngIf="!submitting">
+        {{ action === 'approve' ? 'Approve' : 'Reject' }}
+      </span>
+      <span *ngIf="submitting">
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Submitting...
+      </span>
+    </button>
+  </div>
+</div>

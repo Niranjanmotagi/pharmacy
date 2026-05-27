@@ -1,0 +1,70 @@
+.bb-hero-stat {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+.bb-hero-stat small {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-left: 0.4rem;
+}
+.bb-hero-stat-sub {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 0.2rem;
+}
+
+.bb-medicine-card { overflow: hidden; }
+
+.bb-medicine-thumb {
+  position: relative;
+  height: 180px;
+  background: var(--bb-bg-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--bb-border);
+}
+.bb-medicine-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--bb-transition);
+}
+.bb-medicine-card:hover .bb-medicine-thumb img { transform: scale(1.04); }
+.bb-medicine-thumb-fallback {
+  font-size: 3rem;
+  color: var(--bb-primary);
+  opacity: 0.6;
+}
+.bb-medicine-rx {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pagination .page-link {
+  color: var(--bb-primary);
+  border-radius: var(--bb-radius-md);
+  margin: 0 0.15rem;
+  border: 1px solid var(--bb-border);
+}
+.pagination .page-item.active .page-link {
+  background: var(--bb-primary);
+  border-color: var(--bb-primary);
+  color: #fff;
+}
+.pagination .page-item.disabled .page-link {
+  color: var(--bb-text-soft);
+}

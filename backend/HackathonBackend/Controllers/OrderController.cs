@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using HackathonBackend.Data;
 using HackathonBackend.Models;
+using HackathonBackend.Services;
 
 namespace HackathonBackend.Controllers
 {
@@ -14,15 +15,28 @@ namespace HackathonBackend.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly IEmailService _email;
 
         private const decimal LoyaltyAmountPerPoint = 10m;
 
         public OrderController(
             AppDbContext context,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            IEmailService email)
         {
             _context = context;
             _env = env;
+            _email = email;
+        }
+
+        public class ApproveOrderDto
+        {
+            public DateTime? EstimatedDeliveryDate { get; set; }
+        }
+
+        public class RejectOrderDto
+        {
+            public string Reason { get; set; } = "";
         }
 
         private int GetUserId()
@@ -96,6 +110,27 @@ namespace HackathonBackend.Controllers
                     {
                         message =
                         "Prescription is required"
+                    });
+                }
+
+                // Validate file: JPG, PNG or PDF, max 5 MB.
+                const long maxBytes = 5 * 1024 * 1024;
+                if (request.Prescription.Length > maxBytes)
+                {
+                    return BadRequest(new
+                    {
+                        message = "Prescription file must be under 5 MB."
+                    });
+                }
+
+                var extension = Path.GetExtension(request.Prescription.FileName)
+                    ?.ToLowerInvariant() ?? "";
+                var allowed = new HashSet<string> { ".jpg", ".jpeg", ".png", ".pdf" };
+                if (!allowed.Contains(extension))
+                {
+                    return BadRequest(new
+                    {
+                        message = "Prescription must be a JPG, PNG or PDF file."
                     });
                 }
 
@@ -194,7 +229,7 @@ namespace HackathonBackend.Controllers
                 EstimatedDeliveryDate =
                     orderDate.AddDays(3),
 
-                Status = "Pending",
+                Status = "Pending Validation",
 
                 PrescriptionFile = savedFileName,
 
@@ -205,6 +240,10 @@ namespace HackathonBackend.Controllers
                 DiscountAmount = discountAmount,
 
                 FinalAmount = finalAmount,
+
+                DeliveryAddress = request.Address ?? "",
+                DeliveryPhone = request.Phone ?? "",
+                DeliveryNotes = request.Notes ?? "",
 
                 Items = cart.Select(c =>
                     new OrderItem
@@ -264,6 +303,40 @@ namespace HackathonBackend.Controllers
                 }
             }
 
+            // ===== Confirmation email =====
+            var customer = await _context.Users.FindAsync(userId);
+            if (customer != null && !string.IsNullOrWhiteSpace(customer.Email))
+            {
+                var lines = string.Join("\n",
+                    cart.Select(c =>
+                        $"  - {c.Medicine!.Name} x {c.Quantity} @ ₹{c.Medicine.Price} = ₹{c.Medicine.Price * c.Quantity}"));
+
+                var body =
+$@"Hi {customer.FirstName},
+
+Thanks for your order at ByteBrigade Pharmacy!
+
+Order number: {order.OrderNumber}
+Placed at:    {order.OrderDate:dddd, dd MMM yyyy HH:mm} UTC
+
+Items:
+{lines}
+
+Subtotal:     ₹{order.TotalAmount:F2}
+Discount:     -₹{order.DiscountAmount:F2}
+Final amount: ₹{order.FinalAmount:F2}
+
+Status: Pending Validation. We will email you again once our team
+validates your order{(needsPrescription ? " and prescription" : "")}.
+
+— ByteBrigade Pharmacy";
+
+                await _email.SendAsync(
+                    customer.Email,
+                    $"Order {order.OrderNumber} received - awaiting validation",
+                    body);
+            }
+
             return Ok(new
             {
                 message =
@@ -321,19 +394,130 @@ namespace HackathonBackend.Controllers
             int id,
             [FromBody] string status)
         {
-            var order =
-                _context.Orders.Find(id);
-
-            if (order == null)
-            {
-                return NotFound();
-            }
+            var order = _context.Orders.Find(id);
+            if (order == null) return NotFound();
 
             order.Status = status;
-
             _context.SaveChanges();
-
             return Ok(order);
+        }
+
+        // ===== Approve order (Admin) =====
+        [HttpPut("{id}/approve")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ApproveOrder(int id, [FromBody] ApproveOrderDto dto)
+        {
+            var order = await _context.Orders
+                .Include(o => o.Items).ThenInclude(i => i.Medicine)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (order == null) return NotFound();
+
+            order.Status = "Approved";
+            order.RejectionReason = null;
+            order.EstimatedDeliveryDate =
+                dto?.EstimatedDeliveryDate ?? DateTime.UtcNow.AddDays(3);
+
+            await _context.SaveChangesAsync();
+
+            // Fire-and-forget style email (kept awaited to surface logging errors)
+            var user = await _context.Users.FindAsync(order.UserId);
+            if (user != null && !string.IsNullOrWhiteSpace(user.Email))
+            {
+                var body =
+$@"Hi {user.FirstName},
+
+Great news — your ByteBrigade Pharmacy order {order.OrderNumber} has been APPROVED.
+
+Estimated delivery: {order.EstimatedDeliveryDate:dddd, dd MMM yyyy}
+Final amount: ₹{order.FinalAmount:F2}
+
+Thank you for choosing ByteBrigade.
+— ByteBrigade Pharmacy";
+
+                await _email.SendAsync(user.Email, $"Order {order.OrderNumber} approved", body);
+            }
+
+            return Ok(new
+            {
+                message = "Order approved",
+                orderId = order.Id,
+                orderNumber = order.OrderNumber,
+                status = order.Status,
+                estimatedDeliveryDate = order.EstimatedDeliveryDate
+            });
+        }
+
+        // ===== Reject order (Admin) =====
+        [HttpPut("{id}/reject")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> RejectOrder(int id, [FromBody] RejectOrderDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto?.Reason))
+                return BadRequest(new { message = "A rejection reason is required." });
+
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            order.Status = "Rejected";
+            order.RejectionReason = dto.Reason.Trim();
+
+            // Restore stock for items in this order (best-effort)
+            var orderItems = _context.OrderItems
+                .Where(i => i.OrderId == order.Id)
+                .ToList();
+
+            foreach (var oi in orderItems)
+            {
+                var med = await _context.Medicines.FindAsync(oi.MedicineId);
+                if (med != null) med.StockQuantity += oi.Quantity;
+            }
+
+            await _context.SaveChangesAsync();
+
+            var user = await _context.Users.FindAsync(order.UserId);
+            if (user != null && !string.IsNullOrWhiteSpace(user.Email))
+            {
+                var body =
+$@"Hi {user.FirstName},
+
+Your ByteBrigade Pharmacy order {order.OrderNumber} has been REJECTED.
+
+Reason: {order.RejectionReason}
+
+If you believe this was a mistake, please contact our support team.
+— ByteBrigade Pharmacy";
+
+                await _email.SendAsync(user.Email, $"Order {order.OrderNumber} rejected", body);
+            }
+
+            return Ok(new
+            {
+                message = "Order rejected",
+                orderId = order.Id,
+                orderNumber = order.OrderNumber,
+                status = order.Status,
+                rejectionReason = order.RejectionReason
+            });
+        }
+
+        // ===== Mark delivered (Admin) =====
+        [HttpPut("{id}/deliver")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> MarkDelivered(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            order.Status = "Delivered";
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Order marked as delivered",
+                orderId = order.Id,
+                status = order.Status
+            });
         }
     }
 }

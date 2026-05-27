@@ -1,0 +1,16 @@
+.bb-cart-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--bb-radius-md);
+  overflow: hidden;
+  background: var(--bb-bg-soft);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  font-size: 1.4rem;
+  color: var(--bb-primary);
+  border: 1px solid var(--bb-border);
+}
+.bb-cart-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.bb-qty .btn { min-width: 36px; }

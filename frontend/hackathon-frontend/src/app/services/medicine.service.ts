@@ -1,30 +1,32 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { Medicine } from '../models/medicine.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class MedicineService {
-  apiUrl = 'http://localhost:5020/api/Medicine';
+  apiUrl = `${environment.apiBaseUrl}/api/Medicine`;
 
   constructor(private http: HttpClient) {}
 
-  getAll() {
+  getAll(): Observable<Medicine[]> {
     return this.http.get<Medicine[]>(this.apiUrl);
   }
 
-  getById(id: number) {
+  getById(id: number): Observable<Medicine> {
     return this.http.get<Medicine>(`${this.apiUrl}/${id}`);
   }
 
-  add(med: Partial<Medicine>) {
+  add(med: Partial<Medicine>): Observable<Medicine> {
     return this.http.post<Medicine>(this.apiUrl, med);
   }
 
-  update(id: number, med: Partial<Medicine>) {
+  update(id: number, med: Partial<Medicine>): Observable<Medicine> {
     return this.http.put<Medicine>(`${this.apiUrl}/${id}`, med);
   }
 
-  delete(id: number) {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+  delete(id: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
   }
 }

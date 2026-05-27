@@ -1,19 +1,21 @@
 <app-navbar></app-navbar>
 
-<main class="login-page">
-  <div class="container py-4 py-lg-5">
+<main class="login-page bb-page">
+  <div class="container">
     <div class="row g-4 g-xl-5 align-items-stretch justify-content-center">
+      <!-- Brand panel -->
       <section class="col-lg-6 col-xl-7">
         <div class="brand-panel h-100">
-          <div class="brand-kicker">Digital Pharmacy Care</div>
+          <span class="bb-chip mb-3">Digital Pharmacy Care</span>
 
           <div class="d-flex align-items-center gap-3 mb-4">
-            <div class="brand-mark" aria-hidden="true">
-              <span></span>
-            </div>
+            <div class="brand-mark" aria-hidden="true"><span></span></div>
             <div>
               <h1 class="brand-title mb-1">ByteBrigade Pharmacy</h1>
-              <p class="brand-subtitle mb-0">Trusted medicines, prescription support, and order care.</p>
+              <p class="brand-subtitle mb-0">
+                Trusted medicines, prescription support and order care —
+                all from one secure account.
+              </p>
             </div>
           </div>
 
@@ -27,33 +29,30 @@
                 </div>
               </div>
             </div>
-
             <div class="col-sm-6">
               <div class="care-point">
                 <span class="care-icon">24</span>
                 <div>
                   <h2>Fast Access</h2>
-                  <p>Browse medicines, manage carts, and track orders easily.</p>
+                  <p>Browse medicines, manage carts and track orders.</p>
                 </div>
               </div>
             </div>
-
             <div class="col-sm-6">
               <div class="care-point">
                 <span class="care-icon">LP</span>
                 <div>
                   <h2>Loyalty Care</h2>
-                  <p>Reward points stay visible for returning customers.</p>
+                  <p>Reward points visible right in your profile.</p>
                 </div>
               </div>
             </div>
-
             <div class="col-sm-6">
               <div class="care-point">
                 <span class="care-icon">ID</span>
                 <div>
                   <h2>Private Sign In</h2>
-                  <p>Protected access for personal and pharmacy workflows.</p>
+                  <p>JWT-based protection for every account action.</p>
                 </div>
               </div>
             </div>
@@ -61,46 +60,68 @@
         </div>
       </section>
 
+      <!-- Sign in card -->
       <div class="col-md-9 col-lg-6 col-xl-5">
         <section class="login-card h-100">
           <div class="login-card-header">
-            <span class="secure-pill">Secure account access</span>
+            <span class="bb-chip">Secure account access</span>
             <h2>Welcome back</h2>
-            <p>Sign in to manage medicines, prescriptions, orders, and rewards.</p>
+            <p>Sign in to manage medicines, prescriptions, orders and rewards.</p>
           </div>
 
           @if (error) {
             <div class="alert alert-danger py-2 mb-3" role="alert">{{ error }}</div>
           }
 
-          <form (ngSubmit)="login()" autocomplete="off" class="login-form">
+          <form #form="ngForm" (ngSubmit)="login(form)" autocomplete="on" class="login-form" novalidate>
             <div class="mb-3">
               <label class="form-label" for="username">Username</label>
               <input
                 id="username"
                 class="form-control form-control-lg"
                 name="username"
+                #usernameRef="ngModel"
                 [(ngModel)]="username"
                 required
                 autocomplete="username"
+                [class.is-invalid]="usernameRef.touched && usernameRef.invalid"
               />
+              <div class="bb-field-error" *ngIf="usernameRef.touched && usernameRef.errors?.['required']">
+                Username is required.
+              </div>
             </div>
 
             <div class="mb-3">
               <label class="form-label" for="password">Password</label>
-              <input
-                id="password"
-                type="password"
-                class="form-control form-control-lg"
-                name="password"
-                [(ngModel)]="password"
-                required
-                autocomplete="current-password"
-              />
+              <div class="bb-password-wrap">
+                <input
+                  id="password"
+                  [type]="showPassword ? 'text' : 'password'"
+                  class="form-control form-control-lg"
+                  name="password"
+                  #passwordRef="ngModel"
+                  [(ngModel)]="password"
+                  required
+                  autocomplete="current-password"
+                  [class.is-invalid]="passwordRef.touched && passwordRef.invalid"
+                />
+                <button type="button" class="bb-eye"
+                        (click)="togglePassword()"
+                        [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+                  {{ showPassword ? 'Hide' : 'Show' }}
+                </button>
+              </div>
+              <div class="bb-field-error" *ngIf="passwordRef.touched && passwordRef.errors?.['required']">
+                Password is required.
+              </div>
             </div>
 
             <button type="submit" class="btn btn-success btn-lg w-100" [disabled]="loading">
-              {{ loading ? 'Signing in...' : 'Login' }}
+              <span *ngIf="!loading">Login</span>
+              <span *ngIf="loading">
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Signing in...
+              </span>
             </button>
           </form>
 

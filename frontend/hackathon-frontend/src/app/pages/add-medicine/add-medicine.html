@@ -1,24 +1,34 @@
 <app-navbar></app-navbar>
 
-<div class="container">
-  <h2 class="text-success mb-3">Manage Medicines</h2>
+<div class="container bb-page">
+  <div class="bb-hero d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+    <div>
+      <span class="bb-chip mb-2" style="background: rgba(255,255,255,0.18); color: #fff;">
+        Admin · Inventory
+      </span>
+      <h1 class="mb-1">Manage medicines</h1>
+      <p class="mb-0">Add new items or update stock for existing medicines.</p>
+    </div>
+    <div class="text-md-end">
+      <div class="bb-hero-stat">{{ medicines.length }}<small> medicines</small></div>
+    </div>
+  </div>
 
-  <div *ngIf="message" class="alert alert-success py-2">{{ message }}</div>
-
-  <div class="row">
-    <div class="col-md-5">
+  <div class="row g-4">
+    <!-- Add form -->
+    <div class="col-lg-5">
       <div class="card shadow-sm">
         <div class="card-body">
           <h5 class="card-title">Add New Medicine</h5>
           <form (ngSubmit)="save()">
             <div class="mb-2">
-              <label class="form-label">Name</label>
+              <label class="form-label">Name <span class="text-danger">*</span></label>
               <input class="form-control" name="name" [(ngModel)]="med.name" required />
             </div>
 
-            <div class="row">
+            <div class="row g-2">
               <div class="col mb-2">
-                <label class="form-label">Category</label>
+                <label class="form-label">Category <span class="text-danger">*</span></label>
                 <input class="form-control" name="category" [(ngModel)]="med.category" />
               </div>
               <div class="col mb-2">
@@ -27,7 +37,7 @@
               </div>
             </div>
 
-            <div class="row">
+            <div class="row g-2">
               <div class="col mb-2">
                 <label class="form-label">Dosage Form</label>
                 <input class="form-control" name="dosageForm" placeholder="Tablet, Syrup..." [(ngModel)]="med.dosageForm" />
@@ -48,14 +58,14 @@
               <input class="form-control" name="composition" [(ngModel)]="med.composition" />
             </div>
 
-            <div class="row">
+            <div class="row g-2">
               <div class="col mb-2">
-                <label class="form-label">Price (₹)</label>
-                <input type="number" class="form-control" name="price" [(ngModel)]="med.price" />
+                <label class="form-label">Price (₹) <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" name="price" min="0" [(ngModel)]="med.price" />
               </div>
               <div class="col mb-2">
                 <label class="form-label">Stock</label>
-                <input type="number" class="form-control" name="stockQuantity" [(ngModel)]="med.stockQuantity" />
+                <input type="number" class="form-control" name="stockQuantity" min="0" [(ngModel)]="med.stockQuantity" />
               </div>
             </div>
 
@@ -66,69 +76,95 @@
 
             <div class="mb-2">
               <label class="form-label">Image URL</label>
-              <input class="form-control" name="imageUrl" [(ngModel)]="med.imageUrl" />
+              <input class="form-control" name="imageUrl" [(ngModel)]="med.imageUrl" placeholder="https://..." />
             </div>
 
-            <div class="form-check mb-3">
+            <div class="form-check form-switch mb-3">
               <input type="checkbox" class="form-check-input" id="rx" name="requiresPrescription"
                      [(ngModel)]="med.requiresPrescription" />
               <label class="form-check-label" for="rx">Requires prescription</label>
             </div>
 
-            <button class="btn btn-success w-100" type="submit">Add Medicine</button>
+            <button class="btn btn-success w-100" type="submit" [disabled]="saving">
+              <span *ngIf="!saving">Add Medicine</span>
+              <span *ngIf="saving">
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Saving...
+              </span>
+            </button>
           </form>
         </div>
       </div>
     </div>
 
-    <div class="col-md-7">
+    <!-- Inventory list -->
+    <div class="col-lg-7">
       <div class="card shadow-sm">
         <div class="card-body">
-          <h5 class="card-title">Current Inventory</h5>
-          <table class="table table-sm align-middle">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Mfr / Form</th>
-                <th>Price</th>
-                <th>Stock</th>
-                <th>Rx</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let m of medicines">
-                <td>
-                  <b>{{ m.name }}</b>
-                  <div><small class="text-muted">{{ m.category }}</small></div>
-                </td>
-                <td>
-                  <small>
-                    {{ m.manufacturer }}<br />
-                    <span class="text-muted">{{ m.dosageForm }} {{ m.strength }}</span>
-                  </small>
-                </td>
-                <td>₹{{ m.price }}</td>
-                <td style="width: 110px;">
-                  <input
-                    type="number"
-                    class="form-control form-control-sm"
-                    [value]="m.stockQuantity"
-                    (change)="updateStock(m, $any($event.target).value)"
-                  />
-                </td>
-                <td>
-                  <span *ngIf="m.requiresPrescription" class="badge bg-warning text-dark">Rx</span>
-                </td>
-                <td>
-                  <button class="btn btn-sm btn-outline-danger" (click)="delete(m)">×</button>
-                </td>
-              </tr>
-              <tr *ngIf="medicines.length === 0">
-                <td colspan="6" class="text-center text-muted">No medicines yet.</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+            <h5 class="card-title mb-0">Current Inventory</h5>
+            <input class="form-control form-control-sm" style="max-width: 260px;"
+                   placeholder="Search by name / category / mfr"
+                   [(ngModel)]="search"
+                   (ngModelChange)="applyFilter()" />
+          </div>
+
+          <div *ngIf="loading" class="row g-2">
+            <div class="col-12" *ngFor="let _ of [0,1,2,3]">
+              <span class="bb-skeleton" style="height:1.3rem;"></span>
+            </div>
+          </div>
+
+          <div *ngIf="!loading && filteredMedicines.length === 0" class="bb-empty">
+            <div class="bb-empty-icon">📦</div>
+            <h3>No medicines found</h3>
+            <p>Use the form on the left to add new items.</p>
+          </div>
+
+          <div class="table-responsive" *ngIf="!loading && filteredMedicines.length > 0">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Mfr / Form</th>
+                  <th>Price</th>
+                  <th>Stock</th>
+                  <th>Rx</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let m of filteredMedicines">
+                  <td>
+                    <b>{{ m.name }}</b>
+                    <div><small class="text-muted">{{ m.category }}</small></div>
+                  </td>
+                  <td>
+                    <small>
+                      {{ m.manufacturer }}<br />
+                      <span class="text-muted">{{ m.dosageForm }} {{ m.strength }}</span>
+                    </small>
+                  </td>
+                  <td class="text-nowrap">₹{{ m.price }}</td>
+                  <td style="width: 110px;">
+                    <input
+                      type="number"
+                      min="0"
+                      class="form-control form-control-sm"
+                      [value]="m.stockQuantity"
+                      (change)="updateStock(m, $any($event.target).value)"
+                    />
+                  </td>
+                  <td>
+                    <span *ngIf="m.requiresPrescription" class="bb-status bb-status-pending">Rx</span>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-danger" (click)="delete(m)">×</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -7,19 +9,185 @@
 namespace HackathonBackend.Migrations
 {
     /// <inheritdoc />
-    public partial class SeedMedicines : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Clean up any existing medicines from earlier ad-hoc inserts so the
-            // seed (Ids 1..50) can be applied deterministically. Order-item /
-            // cart-item foreign keys to these are also cleared to keep the
-            // referential integrity intact in a hackathon DB.
-            migrationBuilder.Sql("DELETE FROM CartItems;");
-            migrationBuilder.Sql("DELETE FROM OrderItems;");
-            migrationBuilder.Sql("DELETE FROM Medicines;");
-            migrationBuilder.Sql("DBCC CHECKIDENT ('Medicines', RESEED, 0);");
+            migrationBuilder.CreateTable(
+                name: "Entities",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Entities", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LoyaltyTransactions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    OrderId = table.Column<int>(type: "integer", nullable: true),
+                    PointsEarned = table.Column<int>(type: "integer", nullable: false),
+                    PointsRedeemed = table.Column<int>(type: "integer", nullable: false),
+                    TransactionDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LoyaltyTransactions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Medicines",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Category = table.Column<string>(type: "text", nullable: false),
+                    Manufacturer = table.Column<string>(type: "text", nullable: false),
+                    Composition = table.Column<string>(type: "text", nullable: false),
+                    DosageForm = table.Column<string>(type: "text", nullable: false),
+                    Strength = table.Column<string>(type: "text", nullable: false),
+                    PackagingType = table.Column<string>(type: "text", nullable: false),
+                    Price = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    StockQuantity = table.Column<int>(type: "integer", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    RequiresPrescription = table.Column<bool>(type: "boolean", nullable: false),
+                    ImageUrl = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Medicines", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Orders",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    OrderNumber = table.Column<string>(type: "text", nullable: false),
+                    TotalAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    DiscountAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    FinalAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    PromotionId = table.Column<int>(type: "integer", nullable: true),
+                    OrderDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EstimatedDeliveryDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: false),
+                    RejectionReason = table.Column<string>(type: "text", nullable: true),
+                    DeliveryAddress = table.Column<string>(type: "text", nullable: false),
+                    DeliveryPhone = table.Column<string>(type: "text", nullable: false),
+                    DeliveryNotes = table.Column<string>(type: "text", nullable: false),
+                    PrescriptionFile = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Orders", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Promotions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PromotionCode = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    DiscountType = table.Column<string>(type: "text", nullable: false),
+                    DiscountValue = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    MinimumOrderValue = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    MaxDiscountAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
+                    StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    UsageLimit = table.Column<int>(type: "integer", nullable: true),
+                    UsedCount = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Promotions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Username = table.Column<string>(type: "text", nullable: false),
+                    Password = table.Column<string>(type: "text", nullable: false),
+                    Role = table.Column<string>(type: "text", nullable: false),
+                    Email = table.Column<string>(type: "text", nullable: false),
+                    FirstName = table.Column<string>(type: "text", nullable: false),
+                    LastName = table.Column<string>(type: "text", nullable: false),
+                    PhoneNumber = table.Column<string>(type: "text", nullable: false),
+                    LoyaltyPoints = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CartItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    MedicineId = table.Column<int>(type: "integer", nullable: false),
+                    Quantity = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CartItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CartItems_Medicines_MedicineId",
+                        column: x => x.MedicineId,
+                        principalTable: "Medicines",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OrderItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    OrderId = table.Column<int>(type: "integer", nullable: false),
+                    MedicineId = table.Column<int>(type: "integer", nullable: false),
+                    Quantity = table.Column<int>(type: "integer", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    TotalPrice = table.Column<decimal>(type: "numeric(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderItems_Medicines_MedicineId",
+                        column: x => x.MedicineId,
+                        principalTable: "Medicines",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderItems_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
 
             migrationBuilder.InsertData(
                 table: "Medicines",
@@ -77,260 +245,75 @@ namespace HackathonBackend.Migrations
                     { 49, "Personal Care", "Ethanol 70%", "Kills 99.9% germs.", "Liquid", "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400", "Dettol", "Hand Sanitizer 500ml", "Bottle 500ml", 199m, false, 300, "500ml" },
                     { 50, "Personal Care", "3-ply mask", "Disposable surgical face masks.", "Mask", "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400", "Generic", "Surgical Face Mask (50)", "Box of 50", 150m, false, 400, "3-ply" }
                 });
+
+            migrationBuilder.InsertData(
+                table: "Promotions",
+                columns: new[] { "Id", "Description", "DiscountType", "DiscountValue", "EndDate", "IsActive", "MaxDiscountAmount", "MinimumOrderValue", "PromotionCode", "StartDate", "UsageLimit", "UsedCount" },
+                values: new object[,]
+                {
+                    { 1, "10% off your order", "Percentage", 10m, new DateTime(2027, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), true, 200m, 0m, "WELCOME10", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null, 0 },
+                    { 2, "Flat ₹50 off on orders above ₹500", "FixedAmount", 50m, new DateTime(2027, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), true, null, 500m, "FLAT50", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null, 0 }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Users",
+                columns: new[] { "Id", "Email", "FirstName", "LastName", "LoyaltyPoints", "Password", "PhoneNumber", "Role", "Username" },
+                values: new object[] { 1, "admin@bytebrigade.local", "Admin", "User", 0, "admin123", "0000000000", "Admin", "admin" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CartItems_MedicineId",
+                table: "CartItems",
+                column: "MedicineId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderItems_MedicineId",
+                table: "OrderItems",
+                column: "MedicineId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderItems_OrderId",
+                table: "OrderItems",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_OrderNumber",
+                table: "Orders",
+                column: "OrderNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Promotions_PromotionCode",
+                table: "Promotions",
+                column: "PromotionCode",
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 1);
+            migrationBuilder.DropTable(
+                name: "CartItems");
 
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 2);
+            migrationBuilder.DropTable(
+                name: "Entities");
 
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 3);
+            migrationBuilder.DropTable(
+                name: "LoyaltyTransactions");
 
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 4);
+            migrationBuilder.DropTable(
+                name: "OrderItems");
 
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 5);
+            migrationBuilder.DropTable(
+                name: "Promotions");
 
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 6);
+            migrationBuilder.DropTable(
+                name: "Users");
 
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 7);
+            migrationBuilder.DropTable(
+                name: "Medicines");
 
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 8);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 9);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 10);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 11);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 12);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 13);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 14);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 15);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 16);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 17);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 18);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 19);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 20);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 21);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 22);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 23);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 24);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 25);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 26);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 27);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 28);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 29);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 30);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 31);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 32);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 33);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 34);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 35);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 36);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 37);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 38);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 39);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 40);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 41);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 42);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 43);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 44);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 45);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 46);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 47);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 48);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 49);
-
-            migrationBuilder.DeleteData(
-                table: "Medicines",
-                keyColumn: "Id",
-                keyValue: 50);
+            migrationBuilder.DropTable(
+                name: "Orders");
         }
     }
 }

@@ -8,6 +8,13 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Text;
 
+// Npgsql 6+ refuses to write DateTime values whose Kind is Unspecified to
+// `timestamp with time zone` columns. The HasData() promo seeds use
+// `new DateTime(2026, 1, 1)` which is Unspecified. Enable the legacy
+// behaviour so any Kind is accepted — required before any DbContext usage.
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+AppContext.SetSwitch("Npgsql.DisableDateTimeInfinityConversions", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // =========================

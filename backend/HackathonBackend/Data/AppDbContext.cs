@@ -99,8 +99,8 @@ namespace HackathonBackend.Data
                     DiscountValue = 10m,
                     MinimumOrderValue = 0m,
                     MaxDiscountAmount = 200m,
-                    StartDate = new DateTime(2026, 1, 1),
-                    EndDate = new DateTime(2027, 1, 1),
+                    StartDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    EndDate = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                     IsActive = true,
                     UsageLimit = null,
                     UsedCount = 0
@@ -114,8 +114,8 @@ namespace HackathonBackend.Data
                     DiscountValue = 50m,
                     MinimumOrderValue = 500m,
                     MaxDiscountAmount = null,
-                    StartDate = new DateTime(2026, 1, 1),
-                    EndDate = new DateTime(2027, 1, 1),
+                    StartDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    EndDate = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                     IsActive = true,
                     UsageLimit = null,
                     UsedCount = 0

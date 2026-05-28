@@ -1,0 +1,276 @@
+<app-navbar></app-navbar>
+
+<div class="container bb-page">
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-success"></div>
+    <div class="mt-2 text-muted">Loading profile...</div>
+  </div>
+
+  <div *ngIf="!loading && loadError" class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span>{{ loadError }}</span>
+    <button type="button" class="btn btn-sm btn-outline-danger" (click)="load()">Retry</button>
+  </div>
+
+  <!-- Header -->
+  <section *ngIf="!loading && profile" class="bb-profile-hero mb-4">
+    <div class="row align-items-center g-4">
+      <div class="col-auto">
+        <div class="bb-avatar">{{ initials() }}</div>
+      </div>
+      <div class="col">
+        <span class="bb-chip" style="background: rgba(255,255,255,0.2); color:#fff;">
+          {{ profile.role }}
+        </span>
+        <h1 class="mb-1 mt-2 text-white">{{ fullName() }}</h1>
+        <div class="text-white-50">
+          <span>{{ '@' + profile.username }}</span>
+          <span class="mx-2">·</span>
+          <span>{{ profile.email }}</span>
+          <span *ngIf="profile.activeSince" class="mx-2">·</span>
+          <span *ngIf="profile.activeSince">
+            Active since {{ profile.activeSince | date: 'mediumDate' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section *ngIf="!loading && profile" class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card bb-stat-card">
+        <div class="card-body">
+          <div class="bb-stat-label">Loyalty Points</div>
+          <div class="bb-stat-value text-success">{{ profile.loyaltyPoints }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card bb-stat-card">
+        <div class="card-body">
+          <div class="bb-stat-label">Total Orders</div>
+          <div class="bb-stat-value">{{ profile.totalOrders }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card bb-stat-card">
+        <div class="card-body">
+          <div class="bb-stat-label">Pending</div>
+          <div class="bb-stat-value text-warning">{{ profile.pendingOrders }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card bb-stat-card">
+        <div class="card-body">
+          <div class="bb-stat-label">Total Spent</div>
+          <div class="bb-stat-value">₹{{ profile.totalSpent | number:'1.0-0' }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tabs -->
+  <nav *ngIf="!loading && profile" class="bb-tabs mb-3" role="tablist">
+    <button type="button"
+            class="bb-tab"
+            [class.active]="activeTab === 'overview'"
+            (click)="setTab('overview')">Overview</button>
+    <button type="button"
+            class="bb-tab"
+            [class.active]="activeTab === 'edit'"
+            (click)="setTab('edit')">Edit profile</button>
+    <button type="button"
+            class="bb-tab"
+            [class.active]="activeTab === 'password'"
+            (click)="setTab('password')">Change password</button>
+  </nav>
+
+  <!-- ============= OVERVIEW TAB ============= -->
+  <section *ngIf="!loading && profile && activeTab === 'overview'" class="row g-3">
+    <div class="col-md-7">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Account details</h5>
+          <dl class="bb-dl mb-0">
+            <dt>Username</dt><dd>{{ '@' + profile.username }}</dd>
+            <dt>First name</dt><dd>{{ profile.firstName || '—' }}</dd>
+            <dt>Last name</dt><dd>{{ profile.lastName || '—' }}</dd>
+            <dt>Email</dt><dd>{{ profile.email }}</dd>
+            <dt>Phone</dt><dd>{{ profile.phoneNumber || '—' }}</dd>
+            <dt>Role</dt><dd>{{ profile.role }}</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-5">
+      <div class="card mb-3">
+        <div class="card-body">
+          <h6 class="card-title text-muted small text-uppercase mb-3">Quick actions</h6>
+          <button type="button" class="btn btn-outline-success w-100 mb-2" (click)="setTab('edit')">
+            Edit profile
+          </button>
+          <button type="button" class="btn btn-outline-secondary w-100 mb-2" (click)="setTab('password')">
+            Change password
+          </button>
+          <a routerLink="/orders" class="btn btn-outline-success w-100">
+            View order history
+          </a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-title text-muted small text-uppercase mb-2">Loyalty</h6>
+          <p class="mb-1">You have <strong class="text-success">{{ profile.loyaltyPoints }} points</strong>.</p>
+          <small class="text-muted">Earn 1 point for every ₹10 you spend.</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============= EDIT PROFILE TAB ============= -->
+  <section *ngIf="!loading && profile && activeTab === 'edit'" class="card">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Edit profile</h5>
+
+      <form [formGroup]="editForm" (ngSubmit)="saveProfile()" novalidate>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="firstName">First name</label>
+            <input id="firstName" class="form-control"
+                   formControlName="firstName"
+                   [class.is-invalid]="invalid(editForm, 'firstName')" />
+            <div class="bb-field-error" *ngIf="hasError(editForm, 'firstName', 'required')">First name is required.</div>
+            <div class="bb-field-error" *ngIf="hasError(editForm, 'firstName', 'pattern')">Only letters allowed (max 30).</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="lastName">Last name</label>
+            <input id="lastName" class="form-control"
+                   formControlName="lastName"
+                   [class.is-invalid]="invalid(editForm, 'lastName')" />
+            <div class="bb-field-error" *ngIf="hasError(editForm, 'lastName', 'required')">Last name is required.</div>
+            <div class="bb-field-error" *ngIf="hasError(editForm, 'lastName', 'pattern')">Only letters allowed (max 30).</div>
+          </div>
+
+          <div class="col-md-7">
+            <label class="form-label" for="email">Email</label>
+            <input id="email" type="email" class="form-control"
+                   formControlName="email"
+                   [class.is-invalid]="invalid(editForm, 'email')" />
+            <div class="bb-field-error" *ngIf="hasError(editForm, 'email', 'required')">Email is required.</div>
+            <div class="bb-field-error" *ngIf="hasError(editForm, 'email', 'email')">Enter a valid email.</div>
+          </div>
+
+          <div class="col-md-5">
+            <label class="form-label" for="phoneNumber">Phone number</label>
+            <input id="phoneNumber" class="form-control"
+                   formControlName="phoneNumber"
+                   maxlength="10" inputmode="numeric"
+                   [class.is-invalid]="invalid(editForm, 'phoneNumber')" />
+            <div class="bb-field-error" *ngIf="hasError(editForm, 'phoneNumber', 'required')">Phone is required.</div>
+            <div class="bb-field-error" *ngIf="hasError(editForm, 'phoneNumber', 'pattern')">Must be exactly 10 digits.</div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-success" [disabled]="saving">
+            <span *ngIf="!saving">Save changes</span>
+            <span *ngIf="saving">
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Saving...
+            </span>
+          </button>
+          <button type="button" class="btn btn-outline-secondary" (click)="setTab('overview')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============= CHANGE PASSWORD TAB ============= -->
+  <section *ngIf="!loading && profile && activeTab === 'password'" class="card">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Change password</h5>
+      <p class="text-muted small mb-3">
+        After changing your password you'll be signed out and asked to log in again.
+      </p>
+
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" novalidate>
+        <div class="mb-3">
+          <label class="form-label" for="currentPassword">Current password</label>
+          <div class="bb-password-wrap">
+            <input id="currentPassword"
+                   [type]="showCurrent ? 'text' : 'password'"
+                   class="form-control"
+                   formControlName="currentPassword"
+                   [class.is-invalid]="invalid(passwordForm, 'currentPassword')" />
+            <button type="button" class="bb-eye" (click)="toggleCurrent()">
+              {{ showCurrent ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+          <div class="bb-field-error" *ngIf="hasError(passwordForm, 'currentPassword', 'required')">
+            Current password is required.
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="newPassword">New password</label>
+          <div class="bb-password-wrap">
+            <input id="newPassword"
+                   [type]="showNew ? 'text' : 'password'"
+                   class="form-control"
+                   formControlName="newPassword"
+                   [class.is-invalid]="invalid(passwordForm, 'newPassword')" />
+            <button type="button" class="bb-eye" (click)="toggleNew()">
+              {{ showNew ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+          <div class="bb-strength" [ngClass]="'s' + strengthScore()">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <div class="bb-strength-label">{{ strengthLabel() }}</div>
+          <div class="bb-field-error" *ngIf="hasError(passwordForm, 'newPassword', 'required')">
+            New password is required.
+          </div>
+          <div class="bb-field-error" *ngIf="hasError(passwordForm, 'newPassword', 'pattern')">
+            8+ chars with uppercase, lowercase, number &amp; special char.
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="confirmPassword">Confirm new password</label>
+          <input id="confirmPassword"
+                 type="password"
+                 class="form-control"
+                 formControlName="confirmPassword"
+                 [class.is-invalid]="invalid(passwordForm, 'confirmPassword') ||
+                   (passwordForm.get('confirmPassword')?.touched && !passwordsMatch() &&
+                    !passwordForm.get('confirmPassword')?.hasError('required'))" />
+          <div class="bb-field-error" *ngIf="hasError(passwordForm, 'confirmPassword', 'required')">
+            Please re-enter the new password.
+          </div>
+          <div class="bb-field-error"
+               *ngIf="passwordForm.get('confirmPassword')?.touched && !passwordsMatch() &&
+                      !passwordForm.get('confirmPassword')?.hasError('required')">
+            Passwords do not match.
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-success" [disabled]="changing">
+            <span *ngIf="!changing">Change password</span>
+            <span *ngIf="changing">
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Changing...
+            </span>
+          </button>
+          <button type="button" class="btn btn-outline-secondary" (click)="setTab('overview')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>

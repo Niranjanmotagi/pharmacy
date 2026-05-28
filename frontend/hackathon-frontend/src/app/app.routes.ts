@@ -10,7 +10,7 @@ import { AddMedicine } from './pages/add-medicine/add-medicine';
 import { Cart } from './pages/cart/cart';
 import { Checkout } from './pages/checkout/checkout';
 import { Orders } from './pages/orders/orders';
-import { Loyalty } from './pages/loyalty/loyalty';
+import { Profile } from './pages/profile/profile';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'medicines', pathMatch: 'full' },
@@ -26,7 +26,10 @@ export const routes: Routes = [
   { path: 'cart', component: Cart, canActivate: [authGuard] },
   { path: 'checkout', component: Checkout, canActivate: [authGuard] },
   { path: 'orders', component: Orders, canActivate: [authGuard] },
-  { path: 'loyalty', component: Loyalty, canActivate: [authGuard] },
+  { path: 'profile', component: Profile, canActivate: [authGuard] },
+
+  // Back-compat: old /loyalty links redirect to /profile
+  { path: 'loyalty', redirectTo: 'profile', pathMatch: 'full' },
 
   // Admin only
   { path: 'add-medicine', component: AddMedicine, canActivate: [adminGuard] },

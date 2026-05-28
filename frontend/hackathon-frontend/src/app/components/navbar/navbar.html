@@ -1,78 +1,69 @@
-<nav class="navbar navbar-expand-lg bb-navbar mb-4 shadow-sm">
+<nav class="navbar bb-navbar mb-4 shadow-sm">
   <div class="container">
-    <a class="navbar-brand bb-brand" routerLink="/medicines">
+    <a class="navbar-brand bb-brand" routerLink="/medicines" (click)="close()">
       <span class="bb-brand-mark">Rx</span>
       <span class="bb-brand-name">ByteBrigade <span>Pharmacy</span></span>
     </a>
 
     <button
-      class="navbar-toggler"
       type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#bbNav"
-      aria-controls="bbNav"
-      aria-expanded="false"
+      class="bb-burger"
+      [class.is-open]="open()"
+      [attr.aria-expanded]="open()"
       aria-label="Toggle navigation"
+      (click)="toggle()"
     >
-      <span class="navbar-toggler-icon"></span>
+      <span></span><span></span><span></span>
     </button>
 
-    <div class="collapse navbar-collapse" id="bbNav">
-      <ul class="navbar-nav me-auto bb-nav">
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/medicines" routerLinkActive="active">Medicines</a>
+    <div class="bb-collapse" [class.is-open]="open()">
+      <ul class="bb-nav">
+        <li>
+          <a class="bb-link" routerLink="/medicines" routerLinkActive="active" (click)="close()">Medicines</a>
         </li>
 
         <ng-container *ngIf="auth.isLoggedIn() && !auth.isAdmin()">
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/cart" routerLinkActive="active">Cart</a>
+          <li>
+            <a class="bb-link" routerLink="/cart" routerLinkActive="active" (click)="close()">Cart</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/orders" routerLinkActive="active">My Orders</a>
+          <li>
+            <a class="bb-link" routerLink="/orders" routerLinkActive="active" (click)="close()">My Orders</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/loyalty" routerLinkActive="active">Loyalty</a>
+          <li>
+            <a class="bb-link" routerLink="/loyalty" routerLinkActive="active" (click)="close()">Loyalty</a>
           </li>
         </ng-container>
 
         <ng-container *ngIf="auth.isAdmin()">
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+          <li>
+            <a class="bb-link" routerLink="/dashboard" routerLinkActive="active" (click)="close()">Dashboard</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/add-medicine" routerLinkActive="active">Add Medicine</a>
+          <li>
+            <a class="bb-link" routerLink="/add-medicine" routerLinkActive="active" (click)="close()">Add Medicine</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/admin-orders" routerLinkActive="active">All Orders</a>
+          <li>
+            <a class="bb-link" routerLink="/admin-orders" routerLinkActive="active" (click)="close()">All Orders</a>
           </li>
         </ng-container>
       </ul>
 
-      <ul class="navbar-nav ms-auto align-items-lg-center">
+      <div class="bb-account">
         <ng-container *ngIf="auth.isLoggedIn(); else loginLinks">
-          <li class="nav-item me-lg-2">
-            <span class="bb-user-chip">
-              <span class="bb-user-avatar">{{ (auth.getUsername() || '?').charAt(0).toUpperCase() }}</span>
-              <span class="bb-user-meta">
-                <small>Signed in as</small>
-                <strong>{{ auth.getUsername() }}</strong>
-              </span>
-              <span class="bb-user-role">{{ auth.getRole() }}</span>
+          <span class="bb-user-chip">
+            <span class="bb-user-avatar">{{ (auth.getUsername() || '?').charAt(0).toUpperCase() }}</span>
+            <span class="bb-user-meta">
+              <small>Signed in as</small>
+              <strong>{{ auth.getUsername() }}</strong>
             </span>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-outline-light btn-sm" (click)="logout()">Logout</button>
-          </li>
+            <span class="bb-user-role">{{ auth.getRole() }}</span>
+          </span>
+          <button type="button" class="btn btn-outline-light btn-sm" (click)="logout()">Logout</button>
         </ng-container>
         <ng-template #loginLinks>
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/login">Login</a>
-          </li>
-          <li class="nav-item ms-lg-2">
-            <a class="btn btn-light btn-sm" routerLink="/register">Sign Up</a>
-          </li>
+          <a class="bb-link" routerLink="/login" (click)="close()">Login</a>
+          <a class="btn btn-light btn-sm" routerLink="/register" (click)="close()">Sign Up</a>
         </ng-template>
-      </ul>
+      </div>
     </div>
   </div>
 </nav>

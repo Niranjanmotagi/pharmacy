@@ -124,19 +124,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
-        if (allowedOrigins.Length > 0)
-        {
-            policy.WithOrigins(allowedOrigins)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
-        else
-        {
-            // Local development fallback
-            policy.AllowAnyOrigin()
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
+        // Hackathon demo: accept any origin. Auth tokens travel in the
+        // Authorization header (not in cookies), so AllowAnyOrigin is safe
+        // alongside AllowAnyHeader/Method — no credentials are sent.
+        policy.SetIsOriginAllowed(_ => true)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
 

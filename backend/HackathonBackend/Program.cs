@@ -192,14 +192,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Ensure schema + seed data exist on every cold start.
+// Schema bootstrap for hackathon deploys: build the tables directly from the
+// model and apply HasData seeds. EnsureCreated is idempotent — it returns
+// false if any table already exists, so it's safe to call on every cold start.
 //
-// Strategy:
-//   1. If the project has EF migrations, apply them with Migrate(). This is
-//      the production-grade path.
-//   2. Otherwise (no Migrations/ folder), fall back to EnsureCreated() which
-//      builds the tables directly from the model and applies HasData seeds.
-//      Perfect for hackathon deploys where schema is stable.
+// If you need real migrations later, replace this block with:
+//     db.Database.Migrate();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -207,25 +205,15 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        var pending = db.Database.GetPendingMigrations().ToList();
-        var applied = db.Database.GetAppliedMigrations().ToList();
-
-        if (pending.Any() || applied.Any())
-        {
-            db.Database.Migrate();
-            logger.LogInformation("EF migrations applied. Pending count was {Count}.", pending.Count);
-        }
-        else
-        {
-            // No migrations at all — create schema from the model + apply HasData seeds.
-            var created = db.Database.EnsureCreated();
-            logger.LogInformation(
-                "No migrations found. EnsureCreated() returned {Created}.", created);
-        }
+        logger.LogInformation("==> Schema bootstrap: calling EnsureCreated()");
+        var created = db.Database.EnsureCreated();
+        logger.LogInformation(
+            "==> EnsureCreated() returned {Created}. (true = schema + seeds just built; false = already existed)",
+            created);
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Database initialization failed at startup.");
+        logger.LogError(ex, "==> Schema bootstrap FAILED.");
     }
 }
 

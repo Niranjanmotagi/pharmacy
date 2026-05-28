@@ -12,15 +12,23 @@ import {
   OrderActionModal,
   OrderActionResult
 } from '../../components/order-action-modal/order-action-modal';
+import { OrderDetailModal } from '../../components/order-detail-modal/order-detail-modal';
+import { PrescriptionModal } from '../../components/prescription-modal/prescription-modal';
 import { readErrorMessage } from '../../shared/http-error';
-import { environment } from '../../../environments/environment';
 
-type OrderFilter = 'all' | 'pending' | 'approved' | 'rejected' | 'delivered';
+type OrderFilter = 'all' | 'pending' | 'approved' | 'packed' | 'shipped' | 'delivered' | 'rejected';
 
 @Component({
   selector: 'app-orders',
   standalone: true,
-  imports: [CommonModule, RouterModule, Navbar, OrderActionModal],
+  imports: [
+    CommonModule,
+    RouterModule,
+    Navbar,
+    OrderActionModal,
+    OrderDetailModal,
+    PrescriptionModal
+  ],
   templateUrl: './orders.html',
   styleUrl: './orders.css'
 })
@@ -30,11 +38,20 @@ export class Orders implements OnInit {
   adminMode = false;
   selectedFilter: OrderFilter = 'all';
 
-  // Modal state
+  // Approve / Reject modal
   modalAction: 'approve' | 'reject' = 'approve';
   modalShow = false;
   modalSubmitting = false;
-  modalOrder: Order | null = null;
+
+  // Detail modal
+  detailShow = false;
+  detailOrder: Order | null = null;
+
+  // Prescription modal
+  rxShow = false;
+  rxOrderId: number | null = null;
+  rxOrderNumber = '';
+  rxFilename = '';
 
   constructor(
     private orderService: OrderService,
@@ -68,9 +85,18 @@ export class Orders implements OnInit {
 
   filtered(): Order[] {
     if (this.selectedFilter === 'all') return this.orders;
-    return this.orders.filter((o) =>
-      (o.status || '').toLowerCase().includes(this.selectedFilter)
-    );
+    return this.orders.filter((o) => {
+      const s = (o.status || '').toLowerCase();
+      switch (this.selectedFilter) {
+        case 'pending':   return s.includes('pending');
+        case 'approved':  return s.includes('approve');
+        case 'packed':    return s.includes('pack');
+        case 'shipped':   return s.includes('out');
+        case 'delivered': return s.includes('deliver');
+        case 'rejected':  return s.includes('reject');
+        default:          return true;
+      }
+    });
   }
 
   setFilter(f: OrderFilter): void {
@@ -79,43 +105,62 @@ export class Orders implements OnInit {
 
   statusClass(o: Order): string {
     const s = (o.status || '').toLowerCase();
-    if (s.includes('reject')) return 'bb-status bb-status-rejected';
-    if (s.includes('approve')) return 'bb-status bb-status-approved';
+    if (s.includes('reject'))  return 'bb-status bb-status-rejected';
     if (s.includes('deliver')) return 'bb-status bb-status-delivered';
+    if (s.includes('out'))     return 'bb-status bb-status-shipped';
+    if (s.includes('pack'))    return 'bb-status bb-status-packed';
+    if (s.includes('approve')) return 'bb-status bb-status-approved';
     return 'bb-status bb-status-pending';
   }
 
+  // ===== Detail modal =====
+  openDetail(o: Order): void {
+    this.detailOrder = o;
+    this.detailShow = true;
+  }
+  closeDetail(): void {
+    this.detailShow = false;
+    this.detailOrder = null;
+  }
+
+  // ===== Prescription preview =====
+  openPrescription(o: Order): void {
+    if (!o.prescriptionFile) return;
+    this.rxOrderId = o.id;
+    this.rxOrderNumber = o.orderNumber;
+    this.rxFilename = o.prescriptionFile;
+    this.rxShow = true;
+  }
+  closePrescription(): void {
+    this.rxShow = false;
+    this.rxOrderId = null;
+  }
+
+  // ===== Approve / Reject modal =====
   openApprove(o: Order): void {
+    this.detailShow = false;
     this.modalAction = 'approve';
-    this.modalOrder = o;
+    this.detailOrder = o;
     this.modalShow = true;
   }
-
   openReject(o: Order): void {
+    this.detailShow = false;
     this.modalAction = 'reject';
-    this.modalOrder = o;
+    this.detailOrder = o;
     this.modalShow = true;
   }
-
   closeModal(): void {
     this.modalShow = false;
-    this.modalOrder = null;
   }
 
   onModalConfirm(result: OrderActionResult): void {
-    const order = this.modalOrder;
+    const order = this.detailOrder;
     if (!order) return;
-
     this.modalSubmitting = true;
 
-    // Each branch creates its own Observable with a concrete response shape,
-    // and we subscribe with handlers typed as (unknown, unknown). That avoids
-    // the TS2349 "expression not callable" error caused by unifying the
-    // subscribe() overloads of two different Observable<T> types.
-    const handleSuccess = (): void => {
+    const onSuccess = (): void => {
       this.modalSubmitting = false;
       this.modalShow = false;
-      this.modalOrder = null;
       this.toast.success(
         result.action === 'approve'
           ? `Order ${order.orderNumber} approved.`
@@ -123,8 +168,7 @@ export class Orders implements OnInit {
       );
       this.load();
     };
-
-    const handleError = (err: unknown): void => {
+    const onError = (err: unknown): void => {
       this.modalSubmitting = false;
       this.toast.error('Action failed', readErrorMessage(err, 'Server error.'));
     };
@@ -132,28 +176,50 @@ export class Orders implements OnInit {
     if (result.action === 'approve') {
       this.orderService
         .approve(order.id, result.estimatedDeliveryDate ?? null)
-        .subscribe({ next: handleSuccess, error: handleError });
+        .subscribe({ next: onSuccess, error: onError });
     } else {
       this.orderService
         .reject(order.id, result.reason ?? '')
-        .subscribe({ next: handleSuccess, error: handleError });
+        .subscribe({ next: onSuccess, error: onError });
     }
   }
 
+  // ===== Lifecycle: Pack / Ship / Deliver =====
+  markPacked(o: Order): void {
+    this.orderService.pack(o.id).subscribe({
+      next: () => {
+        this.toast.success(`Order ${o.orderNumber} packed.`);
+        this.load();
+        this.detailShow = false;
+      },
+      error: (err: unknown) =>
+        this.toast.error('Could not pack', readErrorMessage(err))
+    });
+  }
+  markShipped(o: Order): void {
+    this.orderService.ship(o.id).subscribe({
+      next: () => {
+        this.toast.success(`Order ${o.orderNumber} is out for delivery.`);
+        this.load();
+        this.detailShow = false;
+      },
+      error: (err: unknown) =>
+        this.toast.error('Could not ship', readErrorMessage(err))
+    });
+  }
   markDelivered(o: Order): void {
     this.orderService.deliver(o.id).subscribe({
       next: () => {
         this.toast.success(`Order ${o.orderNumber} marked as delivered.`);
         this.load();
+        this.detailShow = false;
       },
       error: (err: unknown) =>
-        this.toast.error(
-          'Could not mark delivered',
-          readErrorMessage(err, 'Server error.')
-        )
+        this.toast.error('Could not mark delivered', readErrorMessage(err))
     });
   }
 
+  // ===== Customer reorder =====
   reorder(o: Order): void {
     if (!o.items || o.items.length === 0) return;
 
@@ -188,10 +254,5 @@ export class Orders implements OnInit {
         `${done} items added, ${failed} could not be added.`
       );
     }
-  }
-
-  prescriptionUrl(file?: string | null): string {
-    if (!file) return '';
-    return `${environment.staticBaseUrl}/prescriptions/${file}`;
   }
 }

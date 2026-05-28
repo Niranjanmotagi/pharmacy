@@ -512,12 +512,111 @@ If you believe this was a mistake, please contact our support team.
             order.Status = "Delivered";
             await _context.SaveChangesAsync();
 
+            var user = await _context.Users.FindAsync(order.UserId);
+            if (user != null && !string.IsNullOrWhiteSpace(user.Email))
+            {
+                await _email.SendAsync(
+                    user.Email,
+                    $"Order {order.OrderNumber} delivered",
+$@"Hi {user.FirstName},
+
+Your ByteBrigade Pharmacy order {order.OrderNumber} has been delivered.
+Thank you for choosing us — we hope you feel better soon!
+");
+            }
+
             return Ok(new
             {
                 message = "Order marked as delivered",
                 orderId = order.Id,
                 status = order.Status
             });
+        }
+
+        // ===== Move order to "Packed" (Admin) =====
+        [HttpPut("{id}/pack")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> MarkPacked(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            order.Status = "Packed";
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Order marked as packed",
+                orderId = order.Id,
+                status = order.Status
+            });
+        }
+
+        // ===== Move order to "Out for Delivery" (Admin) =====
+        [HttpPut("{id}/ship")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> MarkOutForDelivery(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            order.Status = "Out for Delivery";
+            await _context.SaveChangesAsync();
+
+            var user = await _context.Users.FindAsync(order.UserId);
+            if (user != null && !string.IsNullOrWhiteSpace(user.Email))
+            {
+                await _email.SendAsync(
+                    user.Email,
+                    $"Order {order.OrderNumber} is on its way",
+$@"Hi {user.FirstName},
+
+Your ByteBrigade Pharmacy order {order.OrderNumber} is out for delivery and should arrive today.
+
+Estimated delivery: {(order.EstimatedDeliveryDate?.ToString("dddd, dd MMM yyyy") ?? "today")}
+");
+            }
+
+            return Ok(new
+            {
+                message = "Order is out for delivery",
+                orderId = order.Id,
+                status = order.Status
+            });
+        }
+
+        // ===== Prescription download (Admin only) =====
+        // Streams the uploaded file with the correct Content-Type so browsers
+        // can preview JPG/PNG inline and render PDFs in an iframe. Keeps
+        // prescriptions private — no public URL needed.
+        [HttpGet("{id}/prescription")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult GetPrescription(int id)
+        {
+            var order = _context.Orders.Find(id);
+            if (order == null) return NotFound();
+            if (string.IsNullOrWhiteSpace(order.PrescriptionFile))
+                return NotFound(new { message = "No prescription attached to this order." });
+
+            var folder = Path.Combine(
+                _env.ContentRootPath, "wwwroot", "prescriptions");
+            var path = Path.Combine(folder, order.PrescriptionFile);
+
+            if (!System.IO.File.Exists(path))
+                return NotFound(new { message = "Prescription file is missing on disk." });
+
+            var ext = Path.GetExtension(order.PrescriptionFile).ToLowerInvariant();
+            var contentType = ext switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png"            => "image/png",
+                ".pdf"            => "application/pdf",
+                _                 => "application/octet-stream"
+            };
+
+            var stream = System.IO.File.OpenRead(path);
+            // inline so the browser previews instead of forcing a download
+            return File(stream, contentType);
         }
     }
 }

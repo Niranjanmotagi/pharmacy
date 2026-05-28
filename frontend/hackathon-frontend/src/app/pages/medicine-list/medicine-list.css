@@ -1,5 +1,5 @@
 .bb-hero-stat {
-  font-size: 2rem;
+  font-size: 2.1rem;
   font-weight: 800;
   color: #fff;
   line-height: 1;
@@ -7,25 +7,34 @@
 .bb-hero-stat small {
   font-size: 0.85rem;
   font-weight: 600;
-  opacity: 0.8;
+  opacity: 0.85;
   margin-left: 0.4rem;
 }
 .bb-hero-stat-sub {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.78);
   margin-top: 0.2rem;
 }
 
-.bb-medicine-card { overflow: hidden; }
+.bb-medicine-card {
+  overflow: hidden;
+  transition: transform var(--bb-transition), box-shadow var(--bb-transition);
+}
+.bb-medicine-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--bb-shadow-md);
+}
 
 .bb-medicine-thumb {
   position: relative;
-  height: 180px;
-  background: var(--bb-bg-soft);
+  height: 200px;
+  background:
+    linear-gradient(135deg, var(--bb-primary-50) 0%, var(--bb-accent-50) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   border-bottom: 1px solid var(--bb-border);
+  overflow: hidden;
 }
 .bb-medicine-thumb img {
   width: 100%;
@@ -33,32 +42,40 @@
   object-fit: cover;
   transition: transform var(--bb-transition);
 }
-.bb-medicine-card:hover .bb-medicine-thumb img { transform: scale(1.04); }
+.bb-medicine-card:hover .bb-medicine-thumb img { transform: scale(1.05); }
 .bb-medicine-thumb-fallback {
-  font-size: 3rem;
+  font-size: 3.5rem;
   color: var(--bb-primary);
   opacity: 0.6;
+  filter: drop-shadow(0 2px 8px rgba(5, 150, 105, 0.2));
 }
 .bb-medicine-rx {
   position: absolute;
-  top: 0.6rem;
-  right: 0.6rem;
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fcd34d;
+  top: 0.7rem;
+  right: 0.7rem;
+  background: var(--bb-warning-50);
+  color: var(--bb-warning-700);
+  border: 1px solid var(--bb-warning-200);
   border-radius: 999px;
-  padding: 0.2rem 0.65rem;
-  font-size: 0.72rem;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  box-shadow: var(--bb-shadow-sm);
 }
 
 .pagination .page-link {
-  color: var(--bb-primary);
+  color: var(--bb-primary-700);
   border-radius: var(--bb-radius-md);
   margin: 0 0.15rem;
   border: 1px solid var(--bb-border);
+  background: var(--bb-surface);
+  transition: background var(--bb-transition), color var(--bb-transition);
+}
+.pagination .page-link:hover {
+  background: var(--bb-primary-50);
+  color: var(--bb-primary-700);
 }
 .pagination .page-item.active .page-link {
   background: var(--bb-primary);

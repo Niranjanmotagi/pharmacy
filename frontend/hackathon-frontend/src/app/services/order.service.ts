@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { Order } from '../models/order.model';
 import { environment } from '../../environments/environment';
 
@@ -22,6 +23,12 @@ export interface PlaceOrderPayload {
   notes?: string;
 }
 
+export interface OrderActionResponse {
+  message: string;
+  orderId: number;
+  status: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class OrderService {
   apiUrl = `${environment.apiBaseUrl}/api/Order`;
@@ -39,46 +46,59 @@ export class OrderService {
     return this.http.post<PlaceOrderResponse>(`${this.apiUrl}/place`, form);
   }
 
-  myOrders() {
+  myOrders(): Observable<Order[]> {
     return this.http.get<Order[]>(`${this.apiUrl}/my`);
   }
 
-  allOrders() {
+  allOrders(): Observable<Order[]> {
     return this.http.get<Order[]>(`${this.apiUrl}/all`);
   }
 
-  /** Legacy: change status by raw string. Kept for backward-compat. */
-  updateStatus(id: number, status: string) {
-    return this.http.put<Order>(`${this.apiUrl}/${id}/status`, JSON.stringify(status), {
-      headers: { 'Content-Type': 'application/json' }
+  /** Legacy: change status by raw string. */
+  updateStatus(id: number, status: string): Observable<Order> {
+    return this.http.put<Order>(
+      `${this.apiUrl}/${id}/status`,
+      JSON.stringify(status),
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  approve(
+    id: number,
+    estimatedDeliveryDate?: string | Date | null
+  ): Observable<OrderActionResponse & { orderNumber: string; estimatedDeliveryDate: string }> {
+    return this.http.put<OrderActionResponse & { orderNumber: string; estimatedDeliveryDate: string }>(
+      `${this.apiUrl}/${id}/approve`,
+      { estimatedDeliveryDate }
+    );
+  }
+
+  reject(id: number, reason: string): Observable<OrderActionResponse & { orderNumber: string; rejectionReason: string }> {
+    return this.http.put<OrderActionResponse & { orderNumber: string; rejectionReason: string }>(
+      `${this.apiUrl}/${id}/reject`,
+      { reason }
+    );
+  }
+
+  pack(id: number): Observable<OrderActionResponse> {
+    return this.http.put<OrderActionResponse>(`${this.apiUrl}/${id}/pack`, {});
+  }
+
+  ship(id: number): Observable<OrderActionResponse> {
+    return this.http.put<OrderActionResponse>(`${this.apiUrl}/${id}/ship`, {});
+  }
+
+  deliver(id: number): Observable<OrderActionResponse> {
+    return this.http.put<OrderActionResponse>(`${this.apiUrl}/${id}/deliver`, {});
+  }
+
+  /**
+   * Admin-only authenticated download of the prescription file. Returns a
+   * Blob so we can build a local object URL for image/PDF preview.
+   */
+  getPrescriptionBlob(id: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}/prescription`, {
+      responseType: 'blob'
     });
-  }
-
-  approve(id: number, estimatedDeliveryDate?: string | Date | null) {
-    return this.http.put<{
-      message: string;
-      orderId: number;
-      orderNumber: string;
-      status: string;
-      estimatedDeliveryDate: string;
-    }>(`${this.apiUrl}/${id}/approve`, { estimatedDeliveryDate });
-  }
-
-  reject(id: number, reason: string) {
-    return this.http.put<{
-      message: string;
-      orderId: number;
-      orderNumber: string;
-      status: string;
-      rejectionReason: string;
-    }>(`${this.apiUrl}/${id}/reject`, { reason });
-  }
-
-  deliver(id: number) {
-    return this.http.put<{
-      message: string;
-      orderId: number;
-      status: string;
-    }>(`${this.apiUrl}/${id}/deliver`, {});
   }
 }

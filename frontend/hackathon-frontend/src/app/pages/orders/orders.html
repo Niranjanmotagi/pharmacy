@@ -8,30 +8,30 @@
       </h2>
       <p class="text-muted mb-0">
         {{ adminMode
-            ? 'Validate prescriptions, approve or reject orders, and mark deliveries.'
+            ? 'Validate prescriptions, approve, pack, ship and deliver customer orders.'
             : 'Track placed orders, validation status and delivery estimates.' }}
       </p>
     </div>
 
-    <div class="btn-group">
-      <button class="btn btn-outline-secondary" [class.active]="selectedFilter === 'all'" (click)="setFilter('all')">All</button>
-      <button class="btn btn-outline-secondary" [class.active]="selectedFilter === 'pending'" (click)="setFilter('pending')">Pending</button>
-      <button class="btn btn-outline-secondary" [class.active]="selectedFilter === 'approved'" (click)="setFilter('approved')">Approved</button>
-      <button class="btn btn-outline-secondary" [class.active]="selectedFilter === 'rejected'" (click)="setFilter('rejected')">Rejected</button>
-      <button class="btn btn-outline-secondary" [class.active]="selectedFilter === 'delivered'" (click)="setFilter('delivered')">Delivered</button>
+    <div class="bb-filter-bar">
+      <button type="button" [class.active]="selectedFilter === 'all'"       (click)="setFilter('all')">All</button>
+      <button type="button" [class.active]="selectedFilter === 'pending'"   (click)="setFilter('pending')">Pending</button>
+      <button type="button" [class.active]="selectedFilter === 'approved'"  (click)="setFilter('approved')">Approved</button>
+      <button type="button" [class.active]="selectedFilter === 'packed'"    (click)="setFilter('packed')">Packed</button>
+      <button type="button" [class.active]="selectedFilter === 'shipped'"   (click)="setFilter('shipped')">Out for Delivery</button>
+      <button type="button" [class.active]="selectedFilter === 'delivered'" (click)="setFilter('delivered')">Delivered</button>
+      <button type="button" [class.active]="selectedFilter === 'rejected'"  (click)="setFilter('rejected')">Rejected</button>
     </div>
   </div>
 
   <!-- Loading skeletons -->
   <div *ngIf="loading" class="row g-3">
     <div class="col-12" *ngFor="let _ of [0,1,2]">
-      <div class="card">
-        <div class="card-body">
-          <span class="bb-skeleton mb-2" style="height:1.3rem;width:40%;"></span>
-          <span class="bb-skeleton mb-2" style="height:0.9rem;width:60%;"></span>
-          <span class="bb-skeleton" style="height:0.9rem;width:30%;"></span>
-        </div>
-      </div>
+      <div class="card"><div class="card-body">
+        <span class="bb-skeleton mb-2" style="height:1.3rem;width:40%;"></span>
+        <span class="bb-skeleton mb-2" style="height:0.9rem;width:60%;"></span>
+        <span class="bb-skeleton" style="height:0.9rem;width:30%;"></span>
+      </div></div>
     </div>
   </div>
 
@@ -47,12 +47,12 @@
   </div>
 
   <!-- Order cards -->
-  <div class="card mb-3 bb-hover" *ngFor="let o of filtered()">
+  <div class="card mb-3 bb-hover bb-order-card" *ngFor="let o of filtered()">
     <div class="card-body">
-      <div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-3">
-        <div>
+      <div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-2">
+        <div class="d-flex flex-column">
           <div class="d-flex align-items-center gap-2 flex-wrap">
-            <h5 class="mb-0">{{ o.orderNumber || 'Order #' + o.id }}</h5>
+            <h5 class="mb-0">{{ o.orderNumber }}</h5>
             <span [class]="statusClass(o)">{{ o.status }}</span>
           </div>
           <small class="text-muted d-block mt-1">
@@ -76,67 +76,53 @@
         </div>
       </div>
 
-      <!-- Items table (collapsible on mobile by toggle) -->
-      <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-          <thead>
-            <tr>
-              <th>Medicine</th>
-              <th>Qty</th>
-              <th>Unit Price</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of o.items">
-              <td>{{ item.medicine?.name || ('Item #' + item.medicineId) }}</td>
-              <td>{{ item.quantity }}</td>
-              <td>₹{{ item.unitPrice }}</td>
-              <td class="fw-semibold">₹{{ item.totalPrice }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Compact item summary -->
+      <div class="bb-order-summary">
+        <span *ngFor="let item of o.items.slice(0, 3); let last = last">
+          {{ item.medicine?.name || ('Item #' + item.medicineId) }} × {{ item.quantity }}<span *ngIf="!last">, </span>
+        </span>
+        <span *ngIf="o.items.length > 3" class="text-muted"> +{{ o.items.length - 3 }} more</span>
+      </div>
+
+      <div *ngIf="o.rejectionReason" class="alert alert-danger py-2 mt-3 mb-0 small">
+        <strong>Rejected:</strong> {{ o.rejectionReason }}
       </div>
 
       <!-- Footer actions -->
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
         <div class="d-flex flex-wrap gap-2">
-          <a *ngIf="o.prescriptionFile"
-             [href]="prescriptionUrl(o.prescriptionFile)"
-             target="_blank"
-             class="btn btn-sm btn-outline-secondary">
-            View Prescription
-          </a>
-          <button *ngIf="!adminMode" class="btn btn-sm btn-outline-success"
-                  (click)="reorder(o)">
+          <button type="button" class="btn btn-sm btn-outline-success" (click)="openDetail(o)">
+            View details
+          </button>
+          <button *ngIf="adminMode && o.prescriptionFile" type="button" class="btn btn-sm btn-outline-secondary"
+                  (click)="openPrescription(o)">
+            View prescription
+          </button>
+          <button *ngIf="!adminMode" type="button" class="btn btn-sm btn-outline-success" (click)="reorder(o)">
             Reorder
           </button>
         </div>
 
         <ng-container *ngIf="adminMode">
-          <div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-success"
-                    (click)="openApprove(o)"
-                    [disabled]="(o.status || '').toLowerCase().includes('approve')">
-              Approve
-            </button>
-            <button class="btn btn-outline-danger"
-                    (click)="openReject(o)"
-                    [disabled]="(o.status || '').toLowerCase().includes('reject')">
-              Reject
-            </button>
-            <button class="btn btn-outline-primary"
-                    (click)="markDelivered(o)"
-                    [disabled]="(o.status || '').toLowerCase().includes('deliver')">
-              Mark Delivered
-            </button>
+          <div class="d-flex gap-2 flex-wrap">
+            <button *ngIf="(o.status || '').toLowerCase().includes('pending')"
+                    type="button" class="btn btn-sm btn-success"
+                    (click)="openApprove(o)">Approve</button>
+            <button *ngIf="(o.status || '').toLowerCase().includes('approve')"
+                    type="button" class="btn btn-sm btn-success"
+                    (click)="markPacked(o)">Mark Packed</button>
+            <button *ngIf="(o.status || '').toLowerCase().includes('pack')"
+                    type="button" class="btn btn-sm btn-success"
+                    (click)="markShipped(o)">Out for Delivery</button>
+            <button *ngIf="(o.status || '').toLowerCase().includes('out')"
+                    type="button" class="btn btn-sm btn-success"
+                    (click)="markDelivered(o)">Mark Delivered</button>
+            <button *ngIf="!(o.status || '').toLowerCase().includes('deliver') &&
+                          !(o.status || '').toLowerCase().includes('reject')"
+                    type="button" class="btn btn-sm btn-outline-danger"
+                    (click)="openReject(o)">Reject</button>
           </div>
         </ng-container>
-      </div>
-
-      <!-- Show rejection reason inline when present -->
-      <div *ngIf="o.rejectionReason" class="alert alert-danger py-2 mt-3 mb-0 small">
-        <strong>Rejected:</strong> {{ o.rejectionReason }}
       </div>
     </div>
   </div>
@@ -146,8 +132,31 @@
 <app-order-action-modal
   [show]="modalShow"
   [action]="modalAction"
-  [orderNumber]="modalOrder?.orderNumber || ''"
+  [orderNumber]="detailOrder?.orderNumber || ''"
   [submitting]="modalSubmitting"
   (close)="closeModal()"
   (confirm)="onModalConfirm($event)"
 ></app-order-action-modal>
+
+<!-- Order detail modal -->
+<app-order-detail-modal
+  [show]="detailShow"
+  [order]="detailOrder"
+  [adminMode]="adminMode"
+  (close)="closeDetail()"
+  (previewPrescription)="openPrescription($event)"
+  (approve)="openApprove($event)"
+  (reject)="openReject($event)"
+  (pack)="markPacked($event)"
+  (ship)="markShipped($event)"
+  (deliver)="markDelivered($event)"
+></app-order-detail-modal>
+
+<!-- Prescription modal -->
+<app-prescription-modal
+  [show]="rxShow"
+  [orderId]="rxOrderId"
+  [orderNumber]="rxOrderNumber"
+  [filename]="rxFilename"
+  (close)="closePrescription()"
+></app-prescription-modal>

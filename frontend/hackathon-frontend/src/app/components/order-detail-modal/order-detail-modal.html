@@ -1,0 +1,95 @@
+<div class="bb-modal-backdrop" *ngIf="show" (click)="closeModal()"></div>
+<div class="bb-modal bb-detail-modal" *ngIf="show && order" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+  <div class="bb-modal-header">
+    <div>
+      <h5 class="mb-0">{{ order.orderNumber }}</h5>
+      <small class="text-muted">Placed {{ order.orderDate | date: 'medium' }}</small>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span [class]="statusClass()">{{ order.status }}</span>
+      <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+    </div>
+  </div>
+
+  <div class="bb-modal-body bb-detail-body">
+
+    <!-- Lifecycle timeline -->
+    <section *ngIf="!isRejected()" class="bb-timeline">
+      <div
+        *ngFor="let stage of stages; let i = index"
+        class="bb-timeline-step"
+        [class.is-done]="i <= currentIndex()"
+        [class.is-current]="i === currentIndex()"
+      >
+        <div class="bb-timeline-dot">{{ i + 1 }}</div>
+        <div class="bb-timeline-label">{{ stage === 'Pending Validation' ? 'Pending' : stage }}</div>
+      </div>
+    </section>
+
+    <section *ngIf="isRejected()" class="bb-timeline-rejected">
+      <strong>Rejected</strong>
+      <div *ngIf="order.rejectionReason" class="small mt-1">{{ order.rejectionReason }}</div>
+    </section>
+
+    <!-- Order info grid -->
+    <section class="row g-3 mt-3">
+      <div class="col-md-7">
+        <h6 class="text-muted small text-uppercase mb-2">Items</h6>
+        <ul class="list-group">
+          <li class="list-group-item d-flex justify-content-between align-items-start" *ngFor="let i of order.items">
+            <div>
+              <div class="fw-semibold">{{ i.medicine?.name || ('Item #' + i.medicineId) }}</div>
+              <small class="text-muted">{{ i.quantity }} × ₹{{ i.unitPrice }}</small>
+            </div>
+            <div class="fw-bold">₹{{ i.totalPrice }}</div>
+          </li>
+        </ul>
+
+        <div class="bb-totals mt-3">
+          <div><span>Subtotal</span><strong>₹{{ order.totalAmount }}</strong></div>
+          <div *ngIf="order.discountAmount > 0" class="text-success">
+            <span>Discount</span><strong>− ₹{{ order.discountAmount }}</strong>
+          </div>
+          <div class="bb-final">
+            <span>Final amount</span><strong>₹{{ order.finalAmount || order.totalAmount }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-5">
+        <h6 class="text-muted small text-uppercase mb-2">Delivery</h6>
+        <div class="bb-info-card">
+          <div *ngIf="order.deliveryAddress"><strong>Address</strong><br/>{{ order.deliveryAddress }}</div>
+          <div *ngIf="order.deliveryPhone" class="mt-2"><strong>Phone</strong><br/>{{ order.deliveryPhone }}</div>
+          <div *ngIf="order.deliveryNotes" class="mt-2"><strong>Notes</strong><br/>{{ order.deliveryNotes }}</div>
+          <div *ngIf="order.estimatedDeliveryDate" class="mt-2">
+            <strong>Estimated delivery</strong><br/>
+            {{ order.estimatedDeliveryDate | date: 'mediumDate' }}
+          </div>
+        </div>
+
+        <div *ngIf="order.prescriptionFile" class="mt-3">
+          <h6 class="text-muted small text-uppercase mb-2">Prescription</h6>
+          <button type="button" class="btn btn-outline-success w-100" (click)="onPreview()">
+            View prescription
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Admin lifecycle actions -->
+  <div class="bb-modal-footer" *ngIf="adminMode">
+    <button type="button" class="btn btn-outline-secondary me-auto" (click)="closeModal()">Close</button>
+
+    <button *ngIf="canApprove()" type="button" class="btn btn-success" (click)="onApprove()">Approve</button>
+    <button *ngIf="canPack()"    type="button" class="btn btn-success" (click)="onPack()">Mark Packed</button>
+    <button *ngIf="canShip()"    type="button" class="btn btn-success" (click)="onShip()">Out for Delivery</button>
+    <button *ngIf="canDeliver()" type="button" class="btn btn-success" (click)="onDeliver()">Mark Delivered</button>
+    <button *ngIf="canReject()"  type="button" class="btn btn-outline-danger" (click)="onReject()">Reject</button>
+  </div>
+
+  <div class="bb-modal-footer" *ngIf="!adminMode">
+    <button type="button" class="btn btn-outline-secondary ms-auto" (click)="closeModal()">Close</button>
+  </div>
+</div>

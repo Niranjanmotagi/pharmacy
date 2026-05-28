@@ -1,5 +1,50 @@
-.btn-group .btn.active {
+.bb-filter-bar {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--bb-bg-soft);
+  border: 1px solid var(--bb-border);
+  border-radius: 999px;
+  padding: 4px;
+  flex-wrap: wrap;
+}
+.bb-filter-bar button {
+  background: transparent;
+  border: none;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--bb-text-muted);
+  cursor: pointer;
+  transition: background var(--bb-transition), color var(--bb-transition);
+}
+.bb-filter-bar button:hover { color: var(--bb-primary-700); }
+.bb-filter-bar button.active {
   background: var(--bb-primary);
   color: #fff;
-  border-color: var(--bb-primary);
+  box-shadow: var(--bb-shadow-sm);
+}
+
+.bb-order-card {
+  position: relative;
+}
+.bb-order-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1.5rem;
+  bottom: 1.5rem;
+  width: 4px;
+  background: var(--bb-primary);
+  border-radius: 0 4px 4px 0;
+  opacity: 0.7;
+}
+
+.bb-order-summary {
+  background: var(--bb-bg-soft);
+  border-radius: var(--bb-radius-md);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.9rem;
+  color: var(--bb-text-muted);
+  margin-top: 0.4rem;
 }

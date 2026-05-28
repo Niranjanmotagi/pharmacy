@@ -1,16 +1,16 @@
 <app-navbar></app-navbar>
 
 <div class="container bb-page">
-  <!-- Hero -->
+  <!-- ============= Hero ============= -->
   <section class="bb-hero mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
     <div>
       <span class="bb-chip mb-2" style="background: rgba(255,255,255,0.18); color: #fff;">
-        {{ auth.isAdmin() ? 'Admin Console' : 'Welcome' }}
+        {{ auth.isAdmin() ? 'Admin Console' : 'Welcome back' }}
       </span>
       <h1 class="mb-1">Hello, {{ auth.getUsername() }}</h1>
       <p class="mb-0">
         {{ auth.isAdmin()
-            ? 'Monitor inventory, validate prescriptions, and approve customer orders.'
+            ? 'Monitor inventory, validate prescriptions and approve customer orders.'
             : 'Browse medicines, manage your cart and check your orders.' }}
       </p>
     </div>
@@ -25,55 +25,190 @@
     </div>
   </section>
 
-  <!-- Admin stats -->
-  <section *ngIf="auth.isAdmin()" class="mb-4">
-    <div class="row g-3">
-      <div class="col-6 col-lg-3" *ngFor="let i of [0,1,2,3,4]; let idx = index"
-           [hidden]="idx > 4">
-        <ng-container [ngSwitch]="idx">
-          <div class="card h-100 bb-stat">
-            <div class="card-body">
-              <div class="bb-stat-label">
-                <span *ngSwitchCase="0">Total Medicines</span>
-                <span *ngSwitchCase="1">Total Orders</span>
-                <span *ngSwitchCase="2">Pending Validations</span>
-                <span *ngSwitchCase="3">Low Stock (≤ 50)</span>
-                <span *ngSwitchDefault>Total Revenue</span>
-              </div>
-              <div class="bb-stat-value">
-                <ng-container *ngIf="loading">
-                  <span class="bb-skeleton" style="height:1.8rem;width:60%;"></span>
-                </ng-container>
-                <ng-container *ngIf="!loading">
-                  <span *ngSwitchCase="0">{{ totalMedicines() }}</span>
-                  <span *ngSwitchCase="1">{{ totalOrders() }}</span>
-                  <span *ngSwitchCase="2">{{ pendingValidations() }}</span>
-                  <span *ngSwitchCase="3">{{ lowStockCount() }}</span>
-                  <span *ngSwitchDefault>₹{{ totalRevenue() | number:'1.0-0' }}</span>
-                </ng-container>
-              </div>
+  <!-- ============= ADMIN MODE ============= -->
+  <ng-container *ngIf="auth.isAdmin()">
+    <!-- Stat tiles -->
+    <section class="row g-3 mb-4">
+      <div class="col-6 col-md-4 col-xl">
+        <div class="card bb-tile">
+          <div class="card-body">
+            <div class="bb-tile-icon bb-tile-icon-emerald">Rx</div>
+            <div class="bb-tile-label">Total Medicines</div>
+            <ng-container *ngIf="loading">
+              <span class="bb-skeleton" style="height:1.8rem;width:60%;"></span>
+            </ng-container>
+            <div *ngIf="!loading" class="bb-tile-value">{{ totalMedicines() }}</div>
+            <div *ngIf="!loading" class="bb-tile-foot">
+              <span [class.text-warning]="outOfStockCount() > 0">{{ outOfStockCount() }}</span> out of stock
             </div>
           </div>
-        </ng-container>
-      </div>
-    </div>
-  </section>
-
-  <!-- Quick actions -->
-  <section class="row g-3">
-    <div class="col-md-4">
-      <div class="card bb-hover h-100">
-        <div class="card-body">
-          <h5 class="card-title">Browse medicines</h5>
-          <p class="card-text text-muted">
-            View the full catalog with filters for category, dosage and packaging.
-          </p>
-          <a routerLink="/medicines" class="btn btn-success">Browse</a>
         </div>
       </div>
-    </div>
 
-    <ng-container *ngIf="!auth.isAdmin()">
+      <div class="col-6 col-md-4 col-xl">
+        <div class="card bb-tile">
+          <div class="card-body">
+            <div class="bb-tile-icon bb-tile-icon-teal">📦</div>
+            <div class="bb-tile-label">Total Orders</div>
+            <ng-container *ngIf="loading">
+              <span class="bb-skeleton" style="height:1.8rem;width:60%;"></span>
+            </ng-container>
+            <div *ngIf="!loading" class="bb-tile-value">{{ totalOrders() }}</div>
+            <div *ngIf="!loading" class="bb-tile-foot text-muted">Across all customers</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-4 col-xl">
+        <div class="card bb-tile">
+          <div class="card-body">
+            <div class="bb-tile-icon bb-tile-icon-amber">⏳</div>
+            <div class="bb-tile-label">Pending Validation</div>
+            <ng-container *ngIf="loading">
+              <span class="bb-skeleton" style="height:1.8rem;width:60%;"></span>
+            </ng-container>
+            <div *ngIf="!loading" class="bb-tile-value text-warning">{{ pendingValidations() }}</div>
+            <div *ngIf="!loading" class="bb-tile-foot text-muted">
+              {{ pendingPrescriptions() }} with Rx
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-4 col-xl">
+        <div class="card bb-tile">
+          <div class="card-body">
+            <div class="bb-tile-icon bb-tile-icon-rose">⚠️</div>
+            <div class="bb-tile-label">Low Stock</div>
+            <ng-container *ngIf="loading">
+              <span class="bb-skeleton" style="height:1.8rem;width:60%;"></span>
+            </ng-container>
+            <div *ngIf="!loading" class="bb-tile-value">{{ lowStockCount() }}</div>
+            <div *ngIf="!loading" class="bb-tile-foot text-muted">≤ {{ LOW_STOCK_THRESHOLD }} units</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4 col-xl">
+        <div class="card bb-tile bb-tile-revenue">
+          <div class="card-body">
+            <div class="bb-tile-icon bb-tile-icon-emerald">₹</div>
+            <div class="bb-tile-label">Total Revenue</div>
+            <ng-container *ngIf="loading">
+              <span class="bb-skeleton" style="height:1.8rem;width:60%;"></span>
+            </ng-container>
+            <div *ngIf="!loading" class="bb-tile-value">
+              ₹{{ totalRevenue() | number:'1.0-0' }}
+            </div>
+            <div *ngIf="!loading" class="bb-tile-foot text-muted">Approved + delivered</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recent orders + Low stock -->
+    <section class="row g-3 mb-4">
+      <!-- Recent orders -->
+      <div class="col-12 col-lg-7">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="card-title mb-0">Recent orders</h5>
+              <a routerLink="/admin-orders" class="btn btn-sm btn-outline-success">View all</a>
+            </div>
+
+            <div *ngIf="loading" class="row g-2">
+              <div class="col-12" *ngFor="let _ of [0,1,2,3]">
+                <span class="bb-skeleton" style="height:1.3rem;"></span>
+              </div>
+            </div>
+
+            <div *ngIf="!loading && recentOrders().length === 0" class="bb-empty">
+              <div class="bb-empty-icon">📭</div>
+              <h3>No orders yet</h3>
+              <p>Customer orders will appear here once they're placed.</p>
+            </div>
+
+            <div class="table-responsive" *ngIf="!loading && recentOrders().length > 0">
+              <table class="table table-sm align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Status</th>
+                    <th>Items</th>
+                    <th class="text-end">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let o of recentOrders()">
+                    <td>
+                      <div class="fw-semibold">{{ o.orderNumber }}</div>
+                      <small class="text-muted">{{ o.orderDate | date: 'mediumDate' }}</small>
+                    </td>
+                    <td><span [class]="statusChipClass(o)">{{ o.status }}</span></td>
+                    <td><small class="text-muted">{{ o.items?.length || 0 }} item(s)</small></td>
+                    <td class="text-end fw-semibold">₹{{ o.finalAmount || o.totalAmount }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Low stock alerts -->
+      <div class="col-12 col-lg-5">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="card-title mb-0">Stock alerts</h5>
+              <a routerLink="/add-medicine" class="btn btn-sm btn-outline-success">Restock</a>
+            </div>
+
+            <div *ngIf="loading" class="row g-2">
+              <div class="col-12" *ngFor="let _ of [0,1,2,3]">
+                <span class="bb-skeleton" style="height:1.3rem;"></span>
+              </div>
+            </div>
+
+            <div *ngIf="!loading && lowStock().length === 0" class="bb-empty">
+              <div class="bb-empty-icon">✅</div>
+              <h3>Inventory healthy</h3>
+              <p>No medicines below the {{ LOW_STOCK_THRESHOLD }}-unit threshold.</p>
+            </div>
+
+            <ul *ngIf="!loading && lowStock().length > 0" class="bb-stock-list">
+              <li *ngFor="let m of lowStock().slice(0, 8)">
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                  <div class="flex-grow-1">
+                    <div class="fw-semibold">{{ m.name }}</div>
+                    <small class="text-muted">{{ m.category }} · {{ m.dosageForm }}</small>
+                  </div>
+                  <span [class]="stockBadgeClass(m)">{{ m.stockQuantity }}</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+
+  <!-- ============= CUSTOMER MODE — keep simple action cards ============= -->
+  <ng-container *ngIf="!auth.isAdmin()">
+    <section class="row g-3">
+      <div class="col-md-4">
+        <div class="card bb-hover h-100">
+          <div class="card-body">
+            <h5 class="card-title">Browse medicines</h5>
+            <p class="card-text text-muted">
+              View the full catalog with filters for category, dosage and packaging.
+            </p>
+            <a routerLink="/medicines" class="btn btn-success">Browse</a>
+          </div>
+        </div>
+      </div>
+
       <div class="col-md-4">
         <div class="card bb-hover h-100">
           <div class="card-body">
@@ -97,32 +232,45 @@
           </div>
         </div>
       </div>
-    </ng-container>
+    </section>
+  </ng-container>
 
-    <ng-container *ngIf="auth.isAdmin()">
-      <div class="col-md-4">
-        <div class="card bb-hover h-100">
-          <div class="card-body">
-            <h5 class="card-title">Add medicine</h5>
-            <p class="card-text text-muted">
-              Create new medicines or update inventory, prices and Rx flags.
-            </p>
-            <a routerLink="/add-medicine" class="btn btn-outline-success">Open form</a>
-          </div>
+  <!-- Admin quick actions -->
+  <section *ngIf="auth.isAdmin()" class="row g-3">
+    <div class="col-md-4">
+      <div class="card bb-hover h-100">
+        <div class="card-body">
+          <h5 class="card-title">Manage inventory</h5>
+          <p class="card-text text-muted">
+            Add new medicines or update prices, stock and prescription flags.
+          </p>
+          <a routerLink="/add-medicine" class="btn btn-outline-success">Open inventory</a>
         </div>
       </div>
+    </div>
 
-      <div class="col-md-4">
-        <div class="card bb-hover h-100">
-          <div class="card-body">
-            <h5 class="card-title">All orders</h5>
-            <p class="card-text text-muted">
-              Review customer orders, validate prescriptions, approve or reject.
-            </p>
-            <a routerLink="/admin-orders" class="btn btn-outline-success">Admin orders</a>
-          </div>
+    <div class="col-md-4">
+      <div class="card bb-hover h-100">
+        <div class="card-body">
+          <h5 class="card-title">Validate orders</h5>
+          <p class="card-text text-muted">
+            Review prescriptions and approve, reject or progress orders.
+          </p>
+          <a routerLink="/admin-orders" class="btn btn-outline-success">Open orders</a>
         </div>
       </div>
-    </ng-container>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card bb-hover h-100">
+        <div class="card-body">
+          <h5 class="card-title">Browse catalog</h5>
+          <p class="card-text text-muted">
+            See the store-front exactly as customers do — filters, search and all.
+          </p>
+          <a routerLink="/medicines" class="btn btn-outline-success">Open catalog</a>
+        </div>
+      </div>
+    </div>
   </section>
 </div>
